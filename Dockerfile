@@ -5,11 +5,16 @@ FROM node:24-alpine AS builder
 
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm ci
+# 1. Copiamos específicamente package.json y yarn.lock
+COPY package.json yarn.lock ./
+
+# 2. Equivalente a 'npm ci' en Yarn (instalación limpia y estricta)
+RUN yarn install --frozen-lockfile
 
 COPY . .
-RUN npm run build
+
+# 3. Ejecutamos el script de construcción con Yarn
+RUN yarn build
 
 ####################
 # SERVE WITH NGINX #
