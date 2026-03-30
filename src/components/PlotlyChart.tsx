@@ -1,4 +1,5 @@
-import Plotly from "react-plotly.js";
+import { useEffect, useRef } from "react";
+import Plotly from "plotly.js-dist-min";
 import type { Data, Layout, Config } from "plotly.js";
 
 interface PlotlyChartProps {
@@ -8,13 +9,13 @@ interface PlotlyChartProps {
   style?: React.CSSProperties;
 }
 
-export default function PlotlyChart({ data, layout, config, style }: PlotlyChartProps) {
-  return (
-    <Plotly
-      data={data}
-      layout={layout}
-      config={config}
-      style={style}
-    />
-  );
+export default function PlotlyChartComponent({ data, layout, config, style }: PlotlyChartProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    Plotly.react(containerRef.current, data, layout, config);
+  }, [data, layout, config]);
+
+  return <div ref={containerRef} style={style} />;
 }
