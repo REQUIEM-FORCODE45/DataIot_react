@@ -1,10 +1,19 @@
 import { createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 
+export interface UserSedeAccess {
+    id_sede?: string;
+    _id?: string;
+    areas?: Array<{ id_area?: string; _id?: string }>;
+}
+
 interface User {
-    rol: string;
-    entidad_id: string;
-    email: string;
+    name: string;
+    usuario_id: string;
+    rol?: string;
+    entidad_id?: string;
+    email?: string;
+    sedes?: UserSedeAccess[];
 }
 
 interface AuthState {

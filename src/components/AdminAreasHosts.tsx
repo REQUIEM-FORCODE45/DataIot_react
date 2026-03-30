@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export const AdminAreasHosts = () => {
   const { id_entidad, id_sede } = useParams<{ id_entidad: string; id_sede: string }>();
@@ -17,6 +18,8 @@ export const AdminAreasHosts = () => {
 
   const [sede, setSede] = useState<Sede | null>(null);
   const [loading, setLoading] = useState(true);
+  const [accessDenied, setAccessDenied] = useState(false);
+  const { canEditSites, canAccessEntity, allowedSedeIds, isSuperAdmin, isEntidadAdmin } = usePermissions();
 
   // Estados para modales
   const [isHostModalOpen, setIsHostModalOpen] = useState(false);
@@ -42,10 +45,21 @@ export const AdminAreasHosts = () => {
     if (!id_entidad || !id_sede) return;
     setLoading(true);
     try {
+      if (!canEditSites || !canAccessEntity(id_entidad)) {
+        setAccessDenied(true);
+        setSede(null);
+        return;
+      }
+      if (!isSuperAdmin && !isEntidadAdmin && !allowedSedeIds.includes(id_sede)) {
+        setAccessDenied(true);
+        setSede(null);
+        return;
+      }
       // Como el backend trae todas las sedes, filtramos la que necesitamos
       const sedes = await apiEntidades.getSedes(id_entidad);
       const sedeActual = sedes.find(s => s._id === id_sede);
       setSede(sedeActual || null);
+      setAccessDenied(false);
     } catch (error) {
       console.error("Error al obtener detalles de la sede:", error);
     } finally {
@@ -100,7 +114,16 @@ export const AdminAreasHosts = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-40">
-        <p className="text-muted-foreground animate-pulse">Cargando detalles de la sede...</p>
+        <p className="text-[#64748b] animate-pulse">Cargando detalles de la sede...</p>
+      </div>
+    );
+  }
+
+  if (accessDenied) {
+    return (
+      <div className="p-6 text-center">
+        <h2 className="text-xl font-bold text-[#1e293b]">No tienes permisos para esta sede</h2>
+        <Button className="mt-4 bg-[#00554f] hover:bg-[#004a45] text-white" onClick={() => navigate(-1)}>Volver</Button>
       </div>
     );
   }
@@ -108,8 +131,8 @@ export const AdminAreasHosts = () => {
   if (!sede) {
     return (
       <div className="p-6 text-center">
-        <h2 className="text-xl font-bold">Sede no encontrada</h2>
-        <Button className="mt-4" onClick={() => navigate(-1)}>Volver</Button>
+        <h2 className="text-xl font-bold text-[#1e293b]">Sede no encontrada</h2>
+        <Button className="mt-4 bg-[#00554f] hover:bg-[#004a45] text-white" onClick={() => navigate(-1)}>Volver</Button>
       </div>
     );
   }
@@ -118,12 +141,13 @@ export const AdminAreasHosts = () => {
     <div className="p-6 max-w-7xl mx-auto space-y-8">
       {/* Encabezado */}
       <div className="flex items-center gap-4 border-b pb-4">
-        <Button variant="outline" size="icon" onClick={() => navigate(-1)}>
+        <Button variant="outline" size="icon" onClick={() => navigate(-1)} className="text-[#00554f] hover:text-[#00554f]">
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{sede.name}</h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-xs uppercase tracking-[0.3em] text-[#00554f] font-medium">Administración</p>
+          <h1 className="text-3xl font-bold tracking-tight text-[#1e293b] mt-1">{sede.name}</h1>
+          <p className="text-[#64748b] mt-1">
             {sede.address} | {sede.city}, {sede.department}
           </p>
         </div>
@@ -134,39 +158,39 @@ export const AdminAreasHosts = () => {
         {/* COLUMNA IZQUIERDA: GESTIÓN DE HOSTS */}
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold flex items-center gap-2">
-              <Network size={20} className="text-primary" /> Hosts Autorizados
+            <h2 className="text-xl font-semibold flex items-center gap-2 text-[#1e293b]">
+              <Network size={20} className="text-[#00554f]" /> Hosts Autorizados
             </h2>
             
             <Dialog open={isHostModalOpen} onOpenChange={setIsHostModalOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="flex gap-2">
+                <Button variant="outline" size="sm" className="flex gap-2 text-[#00554f] border-[#00554f] hover:bg-[#00554f] hover:text-white">
                   <PlusCircle size={16} /> Añadir
                 </Button>
               </DialogTrigger>
               <DialogContent>
-                <DialogHeader><DialogTitle>Registrar Host</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle className="text-[#1e293b]">Registrar Host</DialogTitle></DialogHeader>
                 <form onSubmit={handleAddHost} className="space-y-4 py-4">
                   <div className="space-y-2">
-                    <Label htmlFor="host">Dirección IP o Dominio</Label>
+                    <Label htmlFor="host" className="text-[#64748b]">Dirección IP o Dominio</Label>
                     <Input id="host" placeholder="Ej. 192.168.1.100" value={hostData.host} onChange={(e) => setHostData({ host: e.target.value })} required />
                   </div>
-                  <Button type="submit" className="w-full">Guardar Host</Button>
+                  <Button type="submit" className="w-full bg-[#00554f] hover:bg-[#004a45] text-white">Guardar Host</Button>
                 </form>
               </DialogContent>
             </Dialog>
           </div>
 
-          <Card>
+          <Card className="border-[#00554f]/20">
             <CardContent className="p-4 space-y-2">
               {sede.host && sede.host.length > 0 ? (
                 sede.host.map((h, idx) => (
                   <div key={idx} className="flex items-center gap-2 p-2 bg-muted/50 rounded-md border text-sm">
-                    <Server size={14} className="text-muted-foreground" /> {h}
+                    <Server size={14} className="text-[#00554f]" /> <span className="text-[#1e293b]">{h}</span>
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-muted-foreground text-center py-4">No hay hosts registrados.</p>
+                <p className="text-sm text-[#64748b] text-center py-4">No hay hosts registrados.</p>
               )}
             </CardContent>
           </Card>
@@ -175,24 +199,24 @@ export const AdminAreasHosts = () => {
         {/* COLUMNA DERECHA: GESTIÓN DE ÁREAS Y MÓDULOS */}
         <div className="lg:col-span-2 space-y-4">
           <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold flex items-center gap-2">
-              <Layers size={20} className="text-primary" /> Áreas y Módulos
+            <h2 className="text-xl font-semibold flex items-center gap-2 text-[#1e293b]">
+              <Layers size={20} className="text-[#00554f]" /> Áreas y Módulos
             </h2>
             
             <Dialog open={isAreaModalOpen} onOpenChange={setIsAreaModalOpen}>
               <DialogTrigger asChild>
-                <Button size="sm" className="flex gap-2">
+                <Button size="sm" className="flex gap-2 bg-[#00554f] hover:bg-[#004a45] text-white">
                   <PlusCircle size={16} /> Nueva Área
                 </Button>
               </DialogTrigger>
               <DialogContent>
-                <DialogHeader><DialogTitle>Crear Área</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle className="text-[#1e293b]">Crear Área</DialogTitle></DialogHeader>
                 <form onSubmit={handleAddArea} className="space-y-4 py-4">
                   <div className="space-y-2">
-                    <Label htmlFor="areaName">Nombre del Área</Label>
+                    <Label htmlFor="areaName" className="text-[#64748b]">Nombre del Área</Label>
                     <Input id="areaName" placeholder="Ej. Cuarto de Servidores" value={areaData.name} onChange={(e) => setAreaData({ name: e.target.value })} required />
                   </div>
-                  <Button type="submit" className="w-full">Guardar Área</Button>
+                  <Button type="submit" className="w-full bg-[#00554f] hover:bg-[#004a45] text-white">Guardar Área</Button>
                 </form>
               </DialogContent>
             </Dialog>
@@ -201,12 +225,12 @@ export const AdminAreasHosts = () => {
           <div className="space-y-4">
             {sede.areas && sede.areas.length > 0 ? (
               sede.areas.map((area: Area) => (
-                <Card key={area._id} className="border shadow-sm">
-                  <CardHeader className="bg-muted/20 py-3 border-b flex flex-row justify-between items-center">
-                    <CardTitle className="text-lg">{area.name}</CardTitle>
+                <Card key={area._id} className="border border-[#00554f]/20 shadow-sm">
+                  <CardHeader className="bg-[#f8fafc] py-3 border-b flex flex-row justify-between items-center">
+                    <CardTitle className="text-lg text-[#1e293b]">{area.name}</CardTitle>
                     
                     {/* Botón que abre el modal de Módulos guardando el ID del Área seleccionada */}
-                    <Button variant="outline" size="sm" onClick={() => { setSelectedAreaId(area._id!); setIsModuloModalOpen(true); }}>
+                    <Button variant="outline" size="sm" className="border-[#00554f] text-[#00554f] hover:bg-[#00554f] hover:text-white" onClick={() => { setSelectedAreaId(area._id!); setIsModuloModalOpen(true); }}>
                       <PlusCircle size={14} className="mr-1" /> Añadir Sensor/Módulo
                     </Button>
                   </CardHeader>
@@ -216,26 +240,26 @@ export const AdminAreasHosts = () => {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {area.modulos.map((mod, idx) => (
                           <div key={idx} className="p-3 border rounded-md flex items-start gap-3 bg-card">
-                            <Cpu className="text-primary mt-1" size={18} />
+                            <Cpu className="text-[#00554f] mt-1" size={18} />
                             <div>
-                              <p className="font-medium text-sm">{mod.modulo} <span className="text-xs text-muted-foreground">({mod.id_modulo})</span></p>
-                              <p className="text-xs text-muted-foreground mt-1">Tipo: {mod.type_modulo}</p>
-                              <p className="text-xs text-muted-foreground">Ubicación: {mod.ubicacion}</p>
+                              <p className="font-medium text-sm text-[#1e293b]">{mod.modulo} <span className="text-xs text-[#64748b]">({mod.id_modulo})</span></p>
+                              <p className="text-xs text-[#64748b] mt-1">Tipo: {mod.type_modulo}</p>
+                              <p className="text-xs text-[#64748b]">Ubicación: {mod.ubicacion}</p>
                               <p className="text-xs font-mono mt-1 px-1 bg-muted inline-block rounded">{mod.host}</p>
                             </div>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <p className="text-sm text-muted-foreground text-center py-2">No hay módulos registrados en esta área.</p>
+                      <p className="text-sm text-[#64748b] text-center py-2">No hay módulos registrados en esta área.</p>
                     )}
                   </CardContent>
                 </Card>
               ))
             ) : (
               <div className="text-center p-8 border border-dashed rounded-lg bg-muted/20">
-                <Layers className="mx-auto h-10 w-10 text-muted-foreground opacity-50 mb-3" />
-                <p className="text-sm text-muted-foreground">No hay áreas registradas. Crea una para comenzar a añadir sensores.</p>
+                <Layers className="mx-auto h-10 w-10 text-[#00554f] opacity-50 mb-3" />
+                <p className="text-sm text-[#64748b]">No hay áreas registradas. Crea una para comenzar a añadir sensores.</p>
               </div>
             )}
           </div>
@@ -245,32 +269,32 @@ export const AdminAreasHosts = () => {
       {/* MODAL GLOBAL PARA AÑADIR MÓDULO (Sensor) */}
       <Dialog open={isModuloModalOpen} onOpenChange={setIsModuloModalOpen}>
         <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader><DialogTitle>Registrar Sensor/Módulo</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="text-[#1e293b]">Registrar Sensor/Módulo</DialogTitle></DialogHeader>
           <form onSubmit={handleAddModulo} className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="modulo">Nombre del Módulo</Label>
+              <Label htmlFor="modulo" className="text-[#64748b]">Nombre del Módulo</Label>
               <Input id="modulo" placeholder="Ej. Sensor_Hum_01" value={moduloData.modulo} onChange={(e) => setModuloData({...moduloData, modulo: e.target.value})} required />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="id_modulo">ID Hardware (id_modulo)</Label>
+                <Label htmlFor="id_modulo" className="text-[#64748b]">ID Hardware (id_modulo)</Label>
                 <Input id="id_modulo" placeholder="Ej. MOD-001" value={moduloData.id_modulo} onChange={(e) => setModuloData({...moduloData, id_modulo: e.target.value})} required />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="type_modulo">Tipo de Módulo</Label>
+                <Label htmlFor="type_modulo" className="text-[#64748b]">Tipo de Módulo</Label>
                 <Input id="type_modulo" placeholder="Ej. Temperatura" value={moduloData.type_modulo} onChange={(e) => setModuloData({...moduloData, type_modulo: e.target.value})} required />
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="ubicacion">Ubicación Específica</Label>
+              <Label htmlFor="ubicacion" className="text-[#64748b]">Ubicación Específica</Label>
               <Input id="ubicacion" placeholder="Ej. Pasillo Norte" value={moduloData.ubicacion} onChange={(e) => setModuloData({...moduloData, ubicacion: e.target.value})} required />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="mod_host">Host Asignado</Label>
+              <Label htmlFor="mod_host" className="text-[#64748b]">Host Asignado</Label>
               <Input id="mod_host" placeholder="Ej. 192.168.1.100" value={moduloData.host} onChange={(e) => setModuloData({...moduloData, host: e.target.value})} required />
             </div>
             <div className="flex justify-end pt-2">
-              <Button type="submit">Guardar Sensor</Button>
+              <Button type="submit" className="bg-[#00554f] hover:bg-[#004a45] text-white">Guardar Sensor</Button>
             </div>
           </form>
         </DialogContent>

@@ -1,54 +1,60 @@
-import { 
-  LayoutDashboard, 
-  Activity, 
-  Database, 
-  Settings, 
-  Microscope,
-  Cpu,
-  ChevronUp,
-  User2
-} from "lucide-react"
-
+import { Activity, Settings, Microscope, ChevronUp, User2, LineChart } from "lucide-react"
+import { useAuthStore } from "@/hooks/useAuthStore"
+import { usePermissions } from "@/hooks/usePermissions"
+import { Link } from "react-router-dom"
 import {
   Sidebar,
   SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarFooter,
+  useSidebar,
 } from "@/components/ui/sidebar"
-
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Link } from "react-router-dom"
 
-// Menú principal
 const items = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Sensores", url: "/sensors", icon: Microscope },
-  { title: "Usuarios", url: "/users", icon: Activity },
-  { title: "Sedes", url: "/sites", icon: Settings },
+  { title: "Graficas", url: "/charts", icon: LineChart },
+  { title: "Usuarios", url: "/users", icon: Activity, permission: "users" },
+  { title: "Sedes", url: "/sites", icon: Settings, permission: "sites" },
 ]
 
 export function AppSidebar() {
+  const { startLogout, user } = useAuthStore();
+  const { state } = useSidebar();
+  const { canViewUsers, canViewSites } = usePermissions();
+
+  const visibleItems = items.filter((item) => {
+    if (item.permission === "users") return canViewUsers;
+    if (item.permission === "sites") return canViewSites;
+    return true;
+  });
+
   return (
-    <Sidebar collapsible="icon" variant="sidebar">
-    <SidebarContent>
-        <SidebarGroupLabel className="text-sky-500 font-bold">DataIoT Pro</SidebarGroupLabel>
-        <SidebarMenu>
-          {items.map((item) => (
+    <Sidebar collapsible="icon" variant="sidebar" className="bg-[#003d3a] border-r border-black/10">
+      <SidebarContent className="bg-[#003d3a]">
+        <div className="flex items-center px-4 py-4 mb-2">
+          {state === "collapsed" ? (
+            <img src="/img/favicon.png" alt="DataIoT" className="h-[6vh] object-contain mx-auto" />
+          ) : (
+            <img src="/img/DataIOT-Color.png" alt="DataIoT" className="h-[8vh] object-contain" />
+          )}
+        </div>
+        <SidebarMenu className="px-2 space-y-0.5">
+          {visibleItems.map((item) => (
             <SidebarMenuItem key={item.title}>
-              {/* 2. Usamos asChild para que el botón se comporte como un Link de React Router */}
               <SidebarMenuButton asChild tooltip={item.title}>
-                <Link to={item.url}> 
-                  <item.icon />
+                <Link
+                  to={item.url}
+                  className="text-[#cbd5e1] hover:text-white hover:bg-white/10 data-[active=true]:text-white data-[active=true]:bg-white/15 data-[active=true]:font-semibold rounded-[10px]"
+                >
+                  <item.icon className="text-[#4ade80] [&_svg]:!stroke-[2.5]" size={18} />
                   <span>{item.title}</span>
                 </Link>
               </SidebarMenuButton>
@@ -57,19 +63,27 @@ export function AppSidebar() {
         </SidebarMenu>
       </SidebarContent>
 
-      <SidebarFooter>
-        <SidebarMenu>
+      <SidebarFooter className="border-t border-black/10 bg-[#003d3a]">
+        <SidebarMenu className="px-2 py-2">
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <SidebarMenuButton>
-                  <User2 /> David Díaz
-                  <ChevronUp className="ml-auto" />
+                <SidebarMenuButton className="text-[#94a3b8] hover:text-white hover:bg-white/10 rounded-[10px]">
+                  <User2 className="text-[#4ade80] [&_svg]:!stroke-[2.5]" size={18} />
+                  <span>{user?.name || "Perfil"}</span>
+                  <ChevronUp className="ml-auto text-[#64748b]" size={14} />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent side="top" className="w-[--radix-dropdown-menu-trigger-width]">
-                <DropdownMenuItem><span>Cuenta</span></DropdownMenuItem>
-                <DropdownMenuItem><span>Cerrar Sesión</span></DropdownMenuItem>
+                <DropdownMenuItem className="text-[#94a3b8] hover:text-white hover:bg-white/10">
+                  <span>Cuenta</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => { startLogout(); }}
+                  className="text-[#94a3b8] hover:text-white hover:bg-white/10"
+                >
+                  <span>Cerrar Sesión</span>
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>

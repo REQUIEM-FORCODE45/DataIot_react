@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
+import { usePermissions } from "@/hooks/usePermissions";
 
 
 
@@ -21,6 +22,7 @@ export const Sedes = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const { filterEntitiesByAccess, isSuperAdmin, canEditSites } = usePermissions();
 
   // Estado para el formulario de nueva entidad
   const [formData, setFormData] = useState({
@@ -36,7 +38,7 @@ export const Sedes = () => {
     setLoading(true);
     try {
       const data = await apiEntidades.getAll();
-      setEntidades(data);
+      setEntidades(filterEntitiesByAccess(data));
     } catch (error) {
       console.error("Error al obtener entidades:", error);
     } finally {
@@ -75,63 +77,66 @@ export const Sedes = () => {
       {/* Encabezado y Botón de Nueva Entidad */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Entidades y Sedes</h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-xs uppercase tracking-[0.3em] text-[#00554f] font-medium">Administración</p>
+          <h1 className="text-3xl font-bold tracking-tight text-[#1e293b] mt-1">Entidades y Sedes</h1>
+          <p className="text-[#64748b] mt-1">
             Gestiona las entidades registradas y administra sus sedes, áreas y módulos.
           </p>
         </div>
 
-        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-          <DialogTrigger asChild>
-            <Button className="flex items-center gap-2">
-              <PlusCircle size={18} />
-              Nueva Entidad
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>Registrar Nueva Entidad</DialogTitle>
-            </DialogHeader>
-            
-            <form onSubmit={handleRegister} className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Nombre de la Entidad</Label>
-                <Input id="name" name="name" placeholder="Ej. Sensotic SAS" value={formData.name} onChange={handleInputChange} required />
-              </div>
+        {isSuperAdmin && (
+          <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+            <DialogTrigger asChild>
+              <Button className="flex items-center gap-2 bg-[#00554f] hover:bg-[#004a45] text-white rounded-[10px]">
+                <PlusCircle size={18} />
+                Nueva Entidad
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle className="text-[#1e293b]">Registrar Nueva Entidad</DialogTitle>
+              </DialogHeader>
               
-              <div className="grid grid-cols-4 gap-4">
-                <div className="col-span-3 space-y-2">
-                  <Label htmlFor="nit">NIT</Label>
-                  <Input id="nit" name="nit" placeholder="900123456" value={formData.nit} onChange={handleInputChange} required />
+              <form onSubmit={handleRegister} className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Nombre de la Entidad</Label>
+                  <Input id="name" name="name" placeholder="Ej. Sensotic SAS" value={formData.name} onChange={handleInputChange} required />
                 </div>
-                <div className="col-span-1 space-y-2">
-                  <Label htmlFor="verif">D.V.</Label>
-                  <Input id="verif" name="verif" placeholder="8" value={formData.verif} onChange={handleInputChange} required />
+                
+                <div className="grid grid-cols-4 gap-4">
+                  <div className="col-span-3 space-y-2">
+                    <Label htmlFor="nit">NIT</Label>
+                    <Input id="nit" name="nit" placeholder="900123456" value={formData.nit} onChange={handleInputChange} required />
+                  </div>
+                  <div className="col-span-1 space-y-2">
+                    <Label htmlFor="verif">D.V.</Label>
+                    <Input id="verif" name="verif" placeholder="8" value={formData.verif} onChange={handleInputChange} required />
+                  </div>
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="email">Correo Electrónico</Label>
-                <Input id="email" name="email" type="email" placeholder="contacto@empresa.com" value={formData.email} onChange={handleInputChange} required />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Correo Electrónico</Label>
+                  <Input id="email" name="email" type="email" placeholder="contacto@empresa.com" value={formData.email} onChange={handleInputChange} required />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="phone">Teléfono de contacto</Label>
-                <Input id="phone" name="phone" placeholder="310 000 0000" value={formData.phone} onChange={handleInputChange} />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Teléfono de contacto</Label>
+                  <Input id="phone" name="phone" placeholder="310 000 0000" value={formData.phone} onChange={handleInputChange} />
+                </div>
 
-              <div className="flex justify-end gap-3 pt-4">
-                <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? "Guardando..." : "Guardar Entidad"}
-                </Button>
-              </div>
-            </form>
+                <div className="flex justify-end gap-3 pt-4">
+                  <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
+                    Cancelar
+                  </Button>
+                  <Button type="submit" disabled={isSubmitting} className="bg-[#00554f] hover:bg-[#004a45] text-white">
+                    {isSubmitting ? "Guardando..." : "Guardar Entidad"}
+                  </Button>
+                </div>
+              </form>
 
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
       {/* Grid de Entidades */}
@@ -141,9 +146,9 @@ export const Sedes = () => {
         </div>
       ) : entidades.length === 0 ? (
         <div className="text-center p-10 border border-dashed rounded-lg bg-muted/20">
-          <Building2 className="mx-auto h-12 w-12 text-muted-foreground opacity-50 mb-4" />
-          <h3 className="text-lg font-medium">No hay entidades registradas</h3>
-          <p className="text-sm text-muted-foreground mt-1">Comienza agregando una nueva entidad al sistema.</p>
+          <Building2 className="mx-auto h-12 w-12 text-[#00554f] opacity-50 mb-4" />
+          <h3 className="text-lg font-medium text-[#1e293b]">No hay entidades registradas</h3>
+          <p className="text-sm text-[#64748b] mt-1">Comienza agregando una nueva entidad al sistema.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -151,40 +156,44 @@ export const Sedes = () => {
             <Card key={entidad._id} className="hover:shadow-md transition-all flex flex-col">
               <CardHeader className="pb-3 border-b">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                  <div className="h-10 w-10 rounded-full bg-[#e7ecf2] flex items-center justify-center text-[#00554f]">
                     <Building2 size={20} />
                   </div>
                   <div>
-                    <CardTitle className="text-lg leading-tight line-clamp-1" title={entidad.name}>
+                    <CardTitle className="text-lg leading-tight line-clamp-1 text-[#1e293b]" title={entidad.name}>
                       {entidad.name}
                     </CardTitle>
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="text-xs text-[#64748b] mt-1">
                       NIT: {entidad.nit}-{entidad.verif}
                     </p>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="pt-4 flex-grow space-y-3">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Mail size={16} className="text-primary/70" />
+                <div className="flex items-center gap-2 text-sm text-[#64748b]">
+                  <Mail size={16} className="text-[#00554f]" />
                   <span className="truncate" title={entidad.email}>{entidad.email}</span>
                 </div>
                 {entidad.phone && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Phone size={16} className="text-primary/70" />
+                  <div className="flex items-center gap-2 text-sm text-[#64748b]">
+                    <Phone size={16} className="text-[#00554f]" />
                     <span>{entidad.phone}</span>
                   </div>
                 )}
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <MapPin size={16} className="text-primary/70" />
+                <div className="flex items-center gap-2 text-sm text-[#64748b]">
+                  <MapPin size={16} className="text-[#00554f]" />
                   <span>{entidad.sedes?.length || 0} Sedes registradas</span>
                 </div>
               </CardContent>
               <CardFooter className="pt-0 pb-4">
-              
-                <Button variant="secondary" className="w-full" onClick={() => navigate(`/entidades/${entidad._id}/sedes`)}>
+                {canEditSites && (
+                  <Button
+                    className="w-full bg-[#00554f] hover:bg-[#004a45] text-white"
+                    onClick={() => navigate(`/entidades/${entidad._id}/sedes`)}
+                  >
                     Administrar Sedes
-                </Button>
+                  </Button>
+                )}
               </CardFooter>
             </Card>
           ))}

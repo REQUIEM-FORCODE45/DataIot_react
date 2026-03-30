@@ -4,8 +4,14 @@ import axios from "axios";
 import type { Entidad, Sede, Area, Modulo } from "@/types/entidad"; 
 
 // 1. Creamos la instancia de Axios (renombrada a apiClient para uso interno)
+const entidadBaseUrl = import.meta.env.VITE_ENTIDAD_BASE_URL;
+
+if (!entidadBaseUrl) {
+  throw new Error("Missing VITE_ENTIDAD_BASE_URL in environment");
+}
+
 const apiClient = axios.create({
-  baseURL: "http://localhost:5000/entidad", // Nota: Como ya incluye /entidad, las rutas de abajo son más cortas
+  baseURL: entidadBaseUrl, // Nota: Como ya incluye /entidad, las rutas de abajo son más cortas
   withCredentials: true,
 });
 
