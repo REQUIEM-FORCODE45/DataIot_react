@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import Plotly from "plotly.js-dist-min";
+import Plotly from "plotly.js-dist";
 import type { Data, Layout, Config } from "plotly.js";
 
 interface PlotlyChartProps {
