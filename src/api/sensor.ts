@@ -17,6 +17,18 @@ sensorApi.interceptors.request.use((config) => {
   return config;
 });
 
+export interface HojaVida {
+  nombre: string;
+  marca: string;
+  modelo: string;
+  serial: string;
+  area: string;
+  instalacion: string;
+  responsable: string;
+  verificacion: string;
+  image?: string;
+}
+
 export interface Mantenimiento {
   _id: string;
   fecha: string;
@@ -26,13 +38,47 @@ export interface Mantenimiento {
   createdAt?: string;
 }
 
+export interface SensorData {
+  sensor: {
+    _id: string;
+    modulo_id: string;
+    area_id: string;
+    ubicacion?: string;
+    hv?: HojaVida;
+    mantenimientos?: Mantenimiento[];
+    createdAt?: string;
+    updatedAt?: string;
+  };
+  message?: string;
+}
+
 export interface MantenimientoResponse {
   sensor: {
     mantenimientos: Mantenimiento[];
   };
 }
 
+export const SENSOR_BASE_URL = sensorBaseUrl;
+
+export const getSensorImageUrl = (filename: string): string => {
+  return `${sensorBaseUrl}/api/image/${filename}`;
+};
+
 export const apiSensor = {
+  getSensor: async (areaId: string, moduloId: string): Promise<SensorData> => {
+    const response = await sensorApi.get<SensorData>(`/api/getData/${areaId}/${moduloId}/modulo`);
+    return response.data;
+  },
+
+  updateHojaVida: async (
+    areaId: string,
+    moduloId: string,
+    hvData: Partial<HojaVida>
+  ) => {
+    const response = await sensorApi.post(`/api/updateData/${areaId}/${moduloId}/modulo`, { hv: hvData });
+    return response.data;
+  },
+
   getMantenimientos: async (areaId: string, moduloId: string): Promise<MantenimientoResponse> => {
     const response = await sensorApi.get<MantenimientoResponse>(`/api/getData/${areaId}/${moduloId}/modulo`);
     return response.data;
@@ -58,6 +104,16 @@ export const apiSensor = {
       headers: { "Content-Type": "multipart/form-data" },
     });
     return response.data;
+  },
+
+  checkModuloId: async (moduloId: string): Promise<boolean> => {
+    const response = await sensorApi.get<boolean>(`/check/${moduloId}`);
+    return response.data;
+  },
+
+  deleteModulo: async (moduloId: string): Promise<boolean> => {
+    const response = await sensorApi.delete<{ deleted: boolean }>(`/${moduloId}`);
+    return response.data.deleted;
   },
 };
 

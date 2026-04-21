@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiSensor } from "@/api/sensor";
-import { ArrowLeft, Wrench, Upload, Save, Clock } from "lucide-react";
+import { ArrowLeft, Wrench, Save, Clock } from "lucide-react";
 
 
 export const RegisterMantenimiento = () => {
@@ -20,25 +20,10 @@ export const RegisterMantenimiento = () => {
     frecuenciaMantenimiento: "mensual",
     observacionesMantenimiento: "",
   });
-  
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setImageFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -51,11 +36,6 @@ export const RegisterMantenimiento = () => {
     
     try {
       await apiSensor.addMantenimiento(areaId, moduloId, formData);
-      
-      if (imageFile) {
-        await apiSensor.uploadImage(areaId, moduloId, imageFile);
-      }
-      
       setSuccess(true);
       setTimeout(() => {
         navigate(-1);
@@ -148,35 +128,6 @@ export const RegisterMantenimiento = () => {
                 className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm min-h-[100px]"
                 required
               />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Imagen del Equipo</Label>
-              <div className="border-2 border-dashed rounded-lg p-4 text-center">
-                {imagePreview ? (
-                  <div className="space-y-2">
-                    <img src={imagePreview} alt="Preview" className="max-h-48 mx-auto rounded" />
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => { setImageFile(null); setImagePreview(null); }}
-                    >
-                      Cambiar imagen
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <Upload className="mx-auto h-8 w-8 text-muted-foreground" />
-                    <Input 
-                      type="file" 
-                      accept="image/*"
-                      onChange={handleImageChange}
-                      className="max-w-xs mx-auto"
-                    />
-                  </div>
-                )}
-              </div>
             </div>
 
             {error && (

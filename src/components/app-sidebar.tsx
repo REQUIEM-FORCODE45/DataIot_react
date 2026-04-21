@@ -43,7 +43,7 @@ export function AppSidebar() {
           {state === "collapsed" ? (
             <img src="/img/favicon.png" alt="DataIoT" className="h-[6vh] object-contain mx-auto" />
           ) : (
-            <img src="/img/DataIOT-Color.png" alt="DataIoT" className="h-[8vh] object-contain" />
+            <img src="/img/DataIOT-White.png" alt="DataIoT" className="h-[8vh] object-contain" />
           )}
         </div>
         <SidebarMenu className="px-2 space-y-0.5">
@@ -52,7 +52,7 @@ export function AppSidebar() {
               <SidebarMenuButton asChild tooltip={item.title}>
                 <Link
                   to={item.url}
-                  className="text-[#cbd5e1] hover:text-white hover:bg-white/10 data-[active=true]:text-white data-[active=true]:bg-white/15 data-[active=true]:font-semibold rounded-[10px]"
+                  className="text-white hover:text-white hover:bg-white/10 data-[active=true]:text-white data-[active=true]:bg-white/15 data-[active=true]:font-semibold rounded-[10px]"
                 >
                   <item.icon className="text-[#4ade80] [&_svg]:!stroke-[2.5]" size={18} />
                   <span>{item.title}</span>

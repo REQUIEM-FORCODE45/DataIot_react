@@ -39,6 +39,16 @@ type ChartItem = {
 
 const COMMON_VALUE_KEYS = ["value1", "value2", "value3", "value4", "temp"] as const;
 
+const VALUE_KEY_LABELS: Record<string, string> = {
+  value1: "CO2",
+  value2: "Temperatura",
+  value3: "Temp-CO2",
+  value4: "Humedad",
+  temp: "Temperatura",
+};
+
+const getValueLabel = (valueKey: string): string => VALUE_KEY_LABELS[valueKey] ?? valueKey;
+
 const detectAvailableValueKeys = (records: SensorHistoryRecord[]): string[] => {
   const valueKeysSet = new Set<string>();
   
@@ -151,18 +161,18 @@ const SensorValueChart = ({
         <div className="flex items-start justify-between gap-2">
           <div>
             <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Sensor</p>
-            <CardTitle className="text-lg leading-tight">{sensorLabel}</CardTitle>
+            <CardTitle className="text-lg leading-tight">{sensorId}</CardTitle>
           </div>
           <div className="flex items-center gap-2">
             <span className="rounded-full border border-border/70 px-2 py-1 text-[11px] text-muted-foreground">
-              {valueKey}
+              {getValueLabel(valueKey)}
             </span>
             <Button size="sm" variant="ghost" onClick={onRemove} className="text-[#003d3a] hover:bg-[#003d3a]/10">
               Eliminar
             </Button>
           </div>
         </div>
-        <p className="text-xs text-muted-foreground">{sensorId}</p>
+        <p className="text-xs text-muted-foreground">{sensorLabel}</p>
         <p className="text-[11px] text-muted-foreground">
           {initDate} → {endDate}
         </p>
@@ -555,7 +565,12 @@ export const EntityCharts = () => {
           <div className="space-y-4">
             {sensorsByArea.map((group) => (
               <section key={group.groupId} className="rounded-[12px] border border-black/10 bg-white p-4">
-                <div className="flex items-center justify-between gap-4">
+                <div 
+                  className="flex items-center justify-between gap-4 cursor-pointer hover:bg-[#f8fafc] rounded-lg -mx-2 px-2 py-1 transition-colors"
+                  onClick={() => toggleGroup(group.groupId)}
+                  role="button"
+                  tabIndex={0}
+                >
                   <div>
                     <p className="text-xs uppercase tracking-[0.3em] text-[#64748b]">Área</p>
                     <h3 className="text-base font-semibold text-[#1e293b] line-clamp-1" title={group.areaName}>
@@ -567,18 +582,10 @@ export const EntityCharts = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-[#64748b]">{group.sensors.length} sensores</span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => toggleGroup(group.groupId)}
-                      className="h-8 w-8 rounded-full p-0"
-                    >
-                      <ChevronDown
-                        size={16}
-                        className={openGroups.has(group.groupId) ? "rotate-180 transition-transform" : "transition-transform"}
-                      />
-                    </Button>
+                    <ChevronDown
+                      size={16}
+                      className={openGroups.has(group.groupId) ? "rotate-180 transition-transform" : "transition-transform"}
+                    />
                   </div>
                 </div>
                 {openGroups.has(group.groupId) && (
@@ -600,8 +607,8 @@ export const EntityCharts = () => {
                           className="h-4 w-4 accent-[#00554f]"
                         />
                         <div className="min-w-0">
-                          <p className="truncate font-medium text-[#0f172a]">{sensor.label}</p>
-                          <p className="text-[11px] text-[#94a3b8] truncate">{sensor.id}</p>
+                          <p className="truncate font-medium text-[#0f172a]">{sensor.id}</p>
+                          <p className="text-[11px] text-[#94a3b8] truncate">{sensor.label}</p>
                         </div>
                       </label>
                     ))}

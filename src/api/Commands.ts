@@ -22,6 +22,29 @@ commandApi.interceptors.request.use((config) => {
 type CommandModulesResponse = { success: boolean } &
   ({ data: ModuleReading[] } | { data?: ModuleReading[] });
 
+export interface SensorConfig {
+  id: string;
+  value: string;
+  minimo: number;
+  maximo: number;
+  alert: boolean;
+  observacion?: string;
+}
+
+export interface SensorConfigResponse {
+  success: boolean;
+  data: SensorConfig[];
+}
+
+export interface SetConfigBody {
+  id_sensor: string;
+  maximo: number;
+  minimo: number;
+  alert: boolean;
+  value: string;
+  observacion?: string;
+}
+
 export const apiCommands = {
   getLastModules: () => commandApi.get<CommandModulesResponse>("/modules/last-data"),
   getLastModulesFast: () => commandApi.get<CommandModulesResponse>("/modules/last-data-fast"),
@@ -33,5 +56,6 @@ export const apiCommands = {
     const endParam = encodeURIComponent(end);
     return commandApi.get<MultiSensorHistoryResponse>(`/gets/${sensorsParam}/${initParam}/${endParam}/data`);
   },
-
+  getSensorConfigs: (moduloId: string) => commandApi.get<SensorConfigResponse>(`/configs/module/${moduloId}`),
+  setSensorConfig: (data: SetConfigBody) => commandApi.post("/setConfig", data),
 };

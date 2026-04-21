@@ -6,9 +6,19 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { Modulo } from "@/types/entidad";
 import type { SensorHistoryRecord } from "@/types/sensor";
-import { Wrench } from "lucide-react";
+import { Wrench, FileText, Bell } from "lucide-react";
 
 const PlotlyChart = lazy(() => import("@/components/PlotlyChart"));
+
+const VALUE_KEY_LABELS: Record<string, string> = {
+  value1: "CO2",
+  value2: "Temperatura",
+  value3: "Temp-CO2",
+  value4: "Humedad",
+  temp: "Temperatura",
+};
+
+const getValueLabel = (valueKey: string): string => VALUE_KEY_LABELS[valueKey] ?? valueKey;
 
 interface SensorCardProps {
   module: Modulo;
@@ -117,15 +127,35 @@ export const SensorCard: FC<SensorCardProps> = memo(({ module, history, areaId }
         </div>
         <p className="text-xs text-muted-foreground">{module.ubicacion || "Sin ubicación"}</p>
         {areaId && (
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="mt-2 text-[#00554f] border-[#00554f] hover:bg-[#00554f] hover:text-white gap-1"
-            onClick={() => navigate(`/mantenimiento/${areaId}/${module.id_modulo || module.id_modulo}`)}
-          >
-            <Wrench size={14} />
-            Mantenimiento
-          </Button>
+          <div className="flex gap-2 mt-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-[#00554f] border-[#00554f] hover:bg-[#00554f] hover:text-white gap-1"
+              onClick={() => navigate(`/sensor/hoja-vida/${areaId}/${module.id_modulo}`)}
+            >
+              <FileText size={14} />
+              Características
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-[#00554f] border-[#00554f] hover:bg-[#00554f] hover:text-white gap-1"
+              onClick={() => navigate(`/sensor/alertas/${module.id_modulo}`)}
+            >
+              <Bell size={14} />
+              Alertas
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-[#00554f] border-[#00554f] hover:bg-[#00554f] hover:text-white gap-1"
+              onClick={() => navigate(`/mantenimiento/${areaId}/${module.id_modulo}`)}
+            >
+              <Wrench size={14} />
+              Mantenimiento
+            </Button>
+          </div>
         )}
       </CardHeader>
 
@@ -139,7 +169,7 @@ export const SensorCard: FC<SensorCardProps> = memo(({ module, history, areaId }
               className="rounded-md border border-border bg-muted/50 px-2 py-1 text-xs"
             >
               {keys.map((key) => (
-                <option key={key} value={key}>{key}</option>
+                <option key={key} value={key}>{getValueLabel(key)}</option>
               ))}
             </select>
           </div>

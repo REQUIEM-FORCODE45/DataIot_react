@@ -31,3 +31,6 @@ coverage/
 
 # Misc
 *.local
+
+# Agentes
+!AGENTS.md

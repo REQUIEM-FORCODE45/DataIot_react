@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -27,11 +27,13 @@ const getModuleId = (module: Modulo, groupId: string, idx: number): string =>
 export const EntitySensors = () => {
   const { entityId } = useParams<{ entityId: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [entity, setEntity] = useState<Entidad | null>(null);
   const [loadingEntity, setLoadingEntity] = useState(false);
   const [historyMap, setHistoryMap] = useState<Record<string, SensorHistoryRecord[]>>({});
   const [loadingModules, setLoadingModules] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedAreaId, setSelectedAreaId] = useState<string>("");
   const batchRef = useRef(false);
   const { filterEntitiesByAccess } = usePermissions();
 
@@ -68,10 +70,26 @@ export const EntitySensors = () => {
     return grouped;
   }, [entity]);
 
+  useEffect(() => {
+    if (sensorsByArea.length > 0) {
+      const areaParam = searchParams.get("area");
+      if (areaParam && sensorsByArea.some(a => a.areaId === areaParam)) {
+        setSelectedAreaId(areaParam);
+      } else if (!selectedAreaId) {
+        setSelectedAreaId(sensorsByArea[0].areaId);
+      }
+    }
+  }, [sensorsByArea, selectedAreaId, searchParams]);
+
+  const visibleAreas = useMemo(() => {
+    if (!selectedAreaId) return sensorsByArea;
+    return sensorsByArea.filter((area) => area.areaId === selectedAreaId);
+  }, [sensorsByArea, selectedAreaId]);
+
   const filteredSensorsByArea = useMemo(() => {
-    if (!searchQuery.trim()) return sensorsByArea;
+    if (!searchQuery.trim()) return visibleAreas;
     const query = searchQuery.toLowerCase();
-    return sensorsByArea
+    return visibleAreas
       .map((group) => ({
         ...group,
         modules: group.modules.filter((entry) => {
@@ -86,17 +104,17 @@ export const EntitySensors = () => {
         }),
       }))
       .filter((group) => group.modules.length > 0);
-  }, [sensorsByArea, searchQuery]);
+  }, [visibleAreas, searchQuery]);
 
   const filteredTotalModules = filteredSensorsByArea.reduce((sum, g) => sum + g.modules.length, 0);
 
   const allModuleIds = useMemo(() => {
-    return sensorsByArea.flatMap((group) =>
+    return visibleAreas.flatMap((group) =>
       group.modules.map((entry, idx) =>
         getModuleId(entry.module, group.areaId, idx)
       )
     );
-  }, [sensorsByArea]);
+  }, [visibleAreas]);
 
   const fetchHistoryBatch = useCallback(
     async (moduleIds: string[]) => {
@@ -207,6 +225,29 @@ export const EntitySensors = () => {
           className="w-full rounded-[10px] border border-black/10 bg-white py-2 pl-9 pr-4 text-sm placeholder:text-[#94a3b8] focus:outline-none focus:ring-2 focus:ring-[#003d3a]/20"
         />
       </div>
+
+      {sensorsByArea.length > 1 && (
+        <div className="flex flex-wrap gap-2">
+          {sensorsByArea.map((area) => (
+            <button
+              key={area.areaId}
+              onClick={() => {
+                const newParams = new URLSearchParams(searchParams);
+                newParams.set("area", area.areaId);
+                navigate(`/sensors/${entityId}?${newParams.toString()}`, { replace: true });
+              }}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                selectedAreaId === area.areaId
+                  ? "bg-[#00554f] text-white"
+                  : "bg-white border border-black/10 text-[#64748b] hover:bg-[#f1f5f9]"
+              }`}
+            >
+              {area.areaName}
+              <span className="ml-1 opacity-70">({area.modules.length})</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {loadingEntity ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

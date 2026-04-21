@@ -40,12 +40,17 @@ export const Sensors = () => {
     fetchEntities();
   }, [fetchEntities]);
 
-  const toggle = (id: string) =>
+  const toggle = (id: string) => {
     setExpanded((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
       return next;
     });
+  };
 
   const totalSensors = useMemo(() => entities.reduce((acc, e) => acc + countModules(e), 0), [entities]);
   const totalEntities = entities.length;
@@ -122,10 +127,16 @@ export const Sensors = () => {
                     className="w-full flex items-center gap-4 px-6 py-4 text-left hover:bg-[#f1f5f9] transition-colors"
                     onClick={() => toggle(entity._id)}
                   >
-                    <span className="text-[#00554f]">
+                    <span className="text-[#00554f] shrink-0">
                       {open ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
                     </span>
-                    <div className="flex-1 min-w-0">
+                    <div 
+                      className="flex-1 min-w-0 cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/sensors/${entity._id}`);
+                      }}
+                    >
                       <p className="font-semibold text-[#1e293b] truncate">{entity.name}</p>
                       <p className="text-xs text-[#94a3b8]">
                         NIT {entity.nit}-{entity.verif}
@@ -142,16 +153,6 @@ export const Sensors = () => {
                         <Cpu size={14} /> {modules} {modules === 1 ? "sensor" : "sensores"}
                       </span>
                     </div>
-                    <Button
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/sensors/${entity._id}`);
-                      }}
-                      className="bg-[#4ade80] hover:bg-[#22c55e] text-[#1e293b] font-semibold rounded-[10px] h-8 px-4 text-xs shrink-0"
-                    >
-                      Ver sensores
-                    </Button>
                   </button>
 
                   {open && (
@@ -163,14 +164,18 @@ export const Sensors = () => {
                               {sede.name}
                             </p>
                             <div className="flex flex-wrap gap-2">
-                              {sede.areas?.map((area) => (
-                                <span
-                                  key={area._id ?? area.name}
-                                  className="rounded-full bg-white border border-black/10 px-3 py-1 text-xs text-[#475569]"
-                                >
-                                  {area.name}
-                                </span>
-                              ))}
+                              {sede.areas?.map((area) => {
+                                const areaId = `${sede._id ?? sede.name}-${area._id ?? area.name}`;
+                                return (
+                                  <button
+                                    key={area._id ?? area.name}
+                                    onClick={() => navigate(`/sensors/${entity._id}?area=${encodeURIComponent(areaId)}`)}
+                                    className="rounded-full bg-white border border-black/10 px-3 py-1 text-xs text-[#475569] hover:bg-[#f1f5f9] hover:border-[#00554f] transition-colors cursor-pointer"
+                                  >
+                                    {area.name}
+                                  </button>
+                                );
+                              })}
                               {(!sede.areas || sede.areas.length === 0) && (
                                 <span className="text-xs text-[#94a3b8]">Sin áreas</span>
                               )}

@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Network, Layers, PlusCircle, Server, Cpu } from "lucide-react";
+import { ArrowLeft, Network, Layers, PlusCircle, Server, Cpu, Trash2 } from "lucide-react";
 
 import { apiEntidades } from "@/api/Sedes";
+import { apiSensor } from "@/api/sensor";
 import type { Sede, Area } from "@/types/entidad";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,7 +20,25 @@ export const AdminAreasHosts = () => {
   const [sede, setSede] = useState<Sede | null>(null);
   const [loading, setLoading] = useState(true);
   const [accessDenied, setAccessDenied] = useState(false);
+  const [entidadName, setEntidadName] = useState("");
   const { canEditSites, canAccessEntity, allowedSedeIds, isSuperAdmin, isEntidadAdmin } = usePermissions();
+
+  const [selectedTipoSensor, setSelectedTipoSensor] = useState<"MT" | "MA" | "ME">("MT");
+
+  const tipoSensorMap = { MT: "Temperatura", MA: "Ambiente", ME: "Energía" };
+
+  const generateUniqueIdModulo = async (tipo: string, entidad: string): Promise<string> => {
+    const siglas = entidad.split(/\s+/).map(w => w[0]).join("").slice(0, 5).toUpperCase();
+    let counter = 1;
+    let id = `${tipo}_${siglas}_${String(counter).padStart(3, "0")}`;
+    
+    while (await apiSensor.checkModuloId(id)) {
+      counter++;
+      id = `${tipo}_${siglas}_${String(counter).padStart(3, "0")}`;
+    }
+    
+    return id;
+  };
 
   // Estados para modales
   const [isHostModalOpen, setIsHostModalOpen] = useState(false);
@@ -56,9 +75,13 @@ export const AdminAreasHosts = () => {
         return;
       }
       // Como el backend trae todas las sedes, filtramos la que necesitamos
-      const sedes = await apiEntidades.getSedes(id_entidad);
+      const [sedes, entidad] = await Promise.all([
+        apiEntidades.getSedes(id_entidad),
+        apiEntidades.getEntidad(id_entidad),
+      ]);
       const sedeActual = sedes.find(s => s._id === id_sede);
       setSede(sedeActual || null);
+      setEntidadName(entidad.name);
       setAccessDenied(false);
     } catch (error) {
       console.error("Error al obtener detalles de la sede:", error);
@@ -108,6 +131,17 @@ export const AdminAreasHosts = () => {
       fetchSedeData();
     } catch (error) {
       console.error("Error al registrar módulo:", error);
+    }
+  };
+
+  const handleDeleteModulo = async (moduloId: string) => {
+    if (!id_entidad || !id_sede || !selectedAreaId) return;
+    try {
+      const response = await apiSensor.deleteModulo(moduloId);
+      console.log("Respuesta al eliminar módulo:", response);
+      fetchSedeData();
+    } catch (error) {
+      console.error("Error al eliminar módulo:", error);
     }
   };
 
@@ -229,8 +263,19 @@ export const AdminAreasHosts = () => {
                   <CardHeader className="bg-[#f8fafc] py-3 border-b flex flex-row justify-between items-center">
                     <CardTitle className="text-lg text-[#1e293b]">{area.name}</CardTitle>
                     
-                    {/* Botón que abre el modal de Módulos guardando el ID del Área seleccionada */}
-                    <Button variant="outline" size="sm" className="border-[#00554f] text-[#00554f] hover:bg-[#00554f] hover:text-white" onClick={() => { setSelectedAreaId(area._id!); setIsModuloModalOpen(true); }}>
+                    <Button variant="outline" size="sm" className="border-[#00554f] text-[#00554f] hover:bg-[#00554f] hover:text-white" onClick={async () => { 
+                      setSelectedAreaId(area._id!);
+                      setSelectedTipoSensor("MT");
+                      const newId = await generateUniqueIdModulo("MT", entidadName);
+                      setModuloData({
+                        ubicacion: "",
+                        host: "0.0.0.0",
+                        type_modulo: tipoSensorMap.MT,
+                        modulo: "",
+                        id_modulo: newId,
+                      });
+                      setIsModuloModalOpen(true);
+                    }}>
                       <PlusCircle size={14} className="mr-1" /> Añadir Sensor/Módulo
                     </Button>
                   </CardHeader>
@@ -239,14 +284,25 @@ export const AdminAreasHosts = () => {
                     {area.modulos && area.modulos.length > 0 ? (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {area.modulos.map((mod, idx) => (
-                          <div key={idx} className="p-3 border rounded-md flex items-start gap-3 bg-card">
+                          <div key={idx} className="p-3 border rounded-md flex items-start gap-3 bg-card relative group">
                             <Cpu className="text-[#00554f] mt-1" size={18} />
-                            <div>
+                            <div className="flex-1">
                               <p className="font-medium text-sm text-[#1e293b]">{mod.modulo} <span className="text-xs text-[#64748b]">({mod.id_modulo})</span></p>
                               <p className="text-xs text-[#64748b] mt-1">Tipo: {mod.type_modulo}</p>
                               <p className="text-xs text-[#64748b]">Ubicación: {mod.ubicacion}</p>
                               <p className="text-xs font-mono mt-1 px-1 bg-muted inline-block rounded">{mod.host}</p>
                             </div>
+                            <button
+                              onClick={() => {
+                                setSelectedAreaId(area._id!);
+                                handleDeleteModulo(mod.id_modulo);
+                                console.log(mod.id_modulo);
+                              }}
+                              className="absolute top-2 right-2 p-1.5 rounded-md opacity-0 group-hover:opacity-100 hover:bg-red-100 text-red-600 transition-opacity"
+                              title="Eliminar módulo"
+                            >
+                              <Trash2 size={14} />
+                            </button>
                           </div>
                         ))}
                       </div>
@@ -272,18 +328,40 @@ export const AdminAreasHosts = () => {
           <DialogHeader><DialogTitle className="text-[#1e293b]">Registrar Sensor/Módulo</DialogTitle></DialogHeader>
           <form onSubmit={handleAddModulo} className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="modulo" className="text-[#64748b]">Nombre del Módulo</Label>
-              <Input id="modulo" placeholder="Ej. Sensor_Hum_01" value={moduloData.modulo} onChange={(e) => setModuloData({...moduloData, modulo: e.target.value})} required />
+              <Label htmlFor="tipo_sensor" className="text-[#64748b]">Tipo de Sensor</Label>
+              <select
+                id="tipo_sensor"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={selectedTipoSensor}
+                onChange={async (e) => {
+                  const tipo = e.target.value as "MT" | "MA" | "ME";
+                  setSelectedTipoSensor(tipo);
+                  const newId = await generateUniqueIdModulo(tipo, entidadName);
+                  setModuloData(prev => ({
+                    ...prev,
+                    type_modulo: tipoSensorMap[tipo],
+                    id_modulo: newId,
+                  }));
+                }}
+              >
+                <option value="MT">MT - Temperatura</option>
+                <option value="MA">MA - Ambiente</option>
+                <option value="ME">ME - Energía</option>
+              </select>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="id_modulo" className="text-[#64748b]">ID Hardware (id_modulo)</Label>
-                <Input id="id_modulo" placeholder="Ej. MOD-001" value={moduloData.id_modulo} onChange={(e) => setModuloData({...moduloData, id_modulo: e.target.value})} required />
+                <Label htmlFor="id_modulo" className="text-[#64748b]">ID Hardware</Label>
+                <Input id="id_modulo" value={moduloData.id_modulo} readOnly className="bg-muted" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="type_modulo" className="text-[#64748b]">Tipo de Módulo</Label>
-                <Input id="type_modulo" placeholder="Ej. Temperatura" value={moduloData.type_modulo} onChange={(e) => setModuloData({...moduloData, type_modulo: e.target.value})} required />
+                <Label htmlFor="type_modulo" className="text-[#64748b]">Tipo</Label>
+                <Input id="type_modulo" value={moduloData.type_modulo} readOnly className="bg-muted" />
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="modulo" className="text-[#64748b]">Nombre del Módulo</Label>
+              <Input id="modulo" placeholder="Ej.Sensor humedad sala" value={moduloData.modulo} onChange={(e) => setModuloData({...moduloData, modulo: e.target.value})} required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="ubicacion" className="text-[#64748b]">Ubicación Específica</Label>
@@ -291,7 +369,7 @@ export const AdminAreasHosts = () => {
             </div>
             <div className="space-y-2">
               <Label htmlFor="mod_host" className="text-[#64748b]">Host Asignado</Label>
-              <Input id="mod_host" placeholder="Ej. 192.168.1.100" value={moduloData.host} onChange={(e) => setModuloData({...moduloData, host: e.target.value})} required />
+              <Input id="mod_host" placeholder="Ej. 192.168.1.100" value={moduloData.host || "0.0.0.0"} onChange={(e) => setModuloData({...moduloData, host: e.target.value})} />
             </div>
             <div className="flex justify-end pt-2">
               <Button type="submit" className="bg-[#00554f] hover:bg-[#004a45] text-white">Guardar Sensor</Button>

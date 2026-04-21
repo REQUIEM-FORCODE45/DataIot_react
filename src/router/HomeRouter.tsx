@@ -11,6 +11,8 @@ import { EntitySensors } from "@/pages/EntitySensors"
 import { EntityCharts } from "@/pages/EntityCharts"
 import { RegisterMantenimiento } from "@/pages/RegisterMantenimiento"
 import { MantenimientoHistory } from "@/pages/MantenimientoHistory"
+import { SensorHojaVida } from "@/pages/SensorHojaVida"
+import { SensorAlertas } from "@/pages/SensorAlertas"
 
 
 
@@ -22,7 +24,7 @@ export const HomeRouter = () => {
         <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger className="-ml-1" />
           <div className="h-4 w-[1px] bg-slate-200 mx-2" />
-          <h1 className="text-sm font-medium">DataIoT - Panel de Control Pasto</h1>
+          <h1 className="text-sm font-medium">DataIoT - Panel de Control</h1>
         </header>
         
         <main className="flex flex-1 flex-col gap-4 p-4 pt-0">
@@ -38,6 +40,8 @@ export const HomeRouter = () => {
             <Route path="/charts" element={<EntityCharts />} />
             <Route path="/mantenimiento/:areaId/:moduloId" element={<RegisterMantenimiento />} />
             <Route path="/mantenimiento/history/:areaId/:moduloId" element={<MantenimientoHistory />} />
+            <Route path="/sensor/hoja-vida/:areaId/:moduloId" element={<SensorHojaVida />} />
+            <Route path="/sensor/alertas/:moduloId" element={<SensorAlertas />} />
             <Route path="/*" element={<Navigate to="/"/>} />
 
           </Routes>
