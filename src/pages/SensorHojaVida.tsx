@@ -12,11 +12,11 @@ const emptyHv: HojaVida = {
   nombre: "",
   marca: "",
   modelo: "",
-  serial: "",
+  serie: "",
   area: "",
-  instalacion: "",
+  fechaInstalacion: "",
   responsable: "",
-  verificacion: "",
+  fechaVerificacion: "",
 };
 
 export const SensorHojaVida = () => {
@@ -78,9 +78,7 @@ export const SensorHojaVida = () => {
     setSuccess(false);
 
     try {
-      console.log("Guardando hv:", hv);
-      await apiSensor.updateHojaVida(areaId, moduloId, hv);
-      console.log("HV guardada, imagen:", imageFile);
+
 
       if (imageFile) {
         console.log("Subiendo imagen...");
@@ -95,8 +93,12 @@ export const SensorHojaVida = () => {
         setImageFile(null);
       }
 
+      console.log("Guardando hoja de vida...", hv);
+      const resp = await apiSensor.updateHojaVida(areaId, moduloId, hv);
+      console.log("Hoja de vida actualizada:", resp);
+      
       setSuccess(true);
-      setTimeout(() => navigate(-1), 1500);
+      //setTimeout(() => navigate(-1), 1500);
     } catch (err: any) {
       console.error("Error al guardar:", err);
       setError(err.response?.data?.message || err.message || "Error al guardar");
@@ -154,8 +156,8 @@ export const SensorHojaVida = () => {
                 <Input id="modelo" name="modelo" value={hv.modelo} onChange={handleChange} placeholder="Modelo del equipo" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="serial">Serie</Label>
-                <Input id="serial" name="serial" value={hv.serial} onChange={handleChange} placeholder="Número de serie" />
+                <Label htmlFor="serie">Serie</Label>
+                <Input id="serie" name="serie" value={hv.serie} onChange={handleChange} placeholder="Número de serie" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="area">Área</Label>
@@ -166,12 +168,12 @@ export const SensorHojaVida = () => {
                 <Input id="responsable" name="responsable" value={hv.responsable} onChange={handleChange} placeholder="Responsable del equipo" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="instalacion">Fecha de Instalación</Label>
-                <Input id="instalacion" name="instalacion" type="date" value={hv.instalacion} onChange={handleChange} />
+                <Label htmlFor="fechaInstalacion">Fecha de Instalación</Label>
+                <Input id="fechaInstalacion" name="fechaInstalacion" type="date" value={hv.fechaInstalacion} onChange={handleChange} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="verificacion">Fecha de Verificación</Label>
-                <Input id="verificacion" name="verificacion" type="date" value={hv.verificacion} onChange={handleChange} />
+                <Label htmlFor="fechaVerificacion">Fecha de Verificación</Label>
+                <Input id="fechaVerificacion" name="fechaVerificacion" type="date" value={hv.fechaVerificacion} onChange={handleChange} />
               </div>
             </div>
 

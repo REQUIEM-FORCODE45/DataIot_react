@@ -21,11 +21,11 @@ export interface HojaVida {
   nombre: string;
   marca: string;
   modelo: string;
-  serial: string;
+  serie: string;
   area: string;
-  instalacion: string;
+  fechaInstalacion: string;
   responsable: string;
-  verificacion: string;
+  fechaVerificacion: string;
   image?: string;
 }
 
@@ -75,7 +75,8 @@ export const apiSensor = {
     moduloId: string,
     hvData: Partial<HojaVida>
   ) => {
-    const response = await sensorApi.post(`/api/updateData/${areaId}/${moduloId}/modulo`, { hv: hvData });
+    console.log("Actualizando hoja de vida...", hvData);
+    const response = await sensorApi.post(`/api/updateData/${areaId}/${moduloId}/modulo`, hvData );
     return response.data;
   },
 
