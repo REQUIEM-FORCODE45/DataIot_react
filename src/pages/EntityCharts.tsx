@@ -164,7 +164,7 @@ const SensorValueChart = ({
             <CardTitle className="text-lg leading-tight">{sensorId}</CardTitle>
           </div>
           <div className="flex items-center gap-2">
-            <span className="rounded-full border border-border/70 px-2 py-1 text-[11px] text-muted-foreground">
+            <span className="rounded-full border border-border/70 px-2 py-1 text-[11px] font-semibold text-muted-foreground">
               {getValueLabel(valueKey)}
             </span>
             <Button size="sm" variant="ghost" onClick={onRemove} className="text-[#003d3a] hover:bg-[#003d3a]/10">
@@ -513,7 +513,7 @@ export const EntityCharts = () => {
                     onChange={() => toggleValue(valueKey)}
                     className="h-4 w-4 accent-[#00554f]"
                   />
-                  <span>{valueKey}</span>
+                  <span className="font-medium">{getValueLabel(valueKey)}</span>
                 </label>
               ))
             ) : (
@@ -526,7 +526,7 @@ export const EntityCharts = () => {
                       onChange={() => toggleValue(valueKey)}
                       className="h-4 w-4 accent-[#00554f]"
                     />
-                    <span>{valueKey}</span>
+<span className="font-medium">{getValueLabel(valueKey)}</span>
                   </label>
                 ))}
               </>
