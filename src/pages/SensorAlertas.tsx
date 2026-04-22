@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,16 +6,42 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiCommands } from "@/api/Commands";
 import { ArrowLeft, Save, Bell, AlertTriangle } from "lucide-react";
+import type { SensorHistoryRecord } from "@/types/sensor";
 
-const VALUE_OPTIONS = [
-  { value: "temp", label: "Temperatura" },
-  { value: "humidity", label: "Humedad" },
-  { value: "co2", label: "CO2" },
-  { value: "value1", label: "CO2 (value1)" },
-  { value: "value2", label: "Temperatura (value2)" },
-  { value: "value3", label: "Temp-CO2 (value3)" },
-  { value: "value4", label: "Humedad (value4)" },
-];
+const COMMON_VALUE_KEYS = ["value1", "value2", "value3", "value4", "temp"] as const;
+
+const VALUE_KEY_LABELS: Record<string, string> = {
+  value1: "CO2",
+  value2: "Temperatura",
+  value3: "Temp-CO2",
+  value4: "Humedad",
+  temp: "Temperatura",
+};
+
+const getValueLabel = (valueKey: string): string => VALUE_KEY_LABELS[valueKey] ?? valueKey;
+
+const detectAvailableValueKeys = (records: SensorHistoryRecord[]): string[] => {
+  const valueKeysSet = new Set<string>();
+  
+  for (const record of records) {
+    for (const key of Object.keys(record)) {
+      if (key === "createAt" || key === "createdAt") continue;
+      const value = record[key];
+      if (typeof value === "number" || (!isNaN(Number(value)) && value !== null && value !== "")) {
+        valueKeysSet.add(key);
+      }
+    }
+  }
+  
+  return Array.from(valueKeysSet).sort((a, b) => {
+    const aIdx = COMMON_VALUE_KEYS.indexOf(a as typeof COMMON_VALUE_KEYS[number]);
+    const bIdx = COMMON_VALUE_KEYS.indexOf(b as typeof COMMON_VALUE_KEYS[number]);
+    if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx;
+    if (aIdx !== -1) return -1;
+    if (bIdx !== -1) return 1;
+    return a.localeCompare(b);
+  });
+};
 
 const emptyConfig = {
   value: "temp",
@@ -33,27 +59,46 @@ export const SensorAlertas = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [config, setConfig] = useState(emptyConfig);
-  const [existingConfigId, setExistingConfigId] = useState<string | null>(null);
+  const [detectedValueKeys, setDetectedValueKeys] = useState<string[]>([]);
+
+  const valueOptions = useMemo(() => {
+    if (detectedValueKeys.length === 0) {
+      return [{ value: "temp", label: "Temperatura" }];
+    }
+    return detectedValueKeys.map((key) => ({ value: key, label: getValueLabel(key) }));
+  }, [detectedValueKeys]);
 
   useEffect(() => {
     const fetchConfig = async () => {
       if (!moduloId) return;
       setLoading(true);
       try {
-        const response = await apiCommands.getSensorConfigs(moduloId);
-        if (response.data.success && response.data.data.length > 0) {
-          const existing = response.data.data[0];
-          setConfig({
-            value: existing.value || "temp",
-            minimo: existing.minimo,
-            maximo: existing.maximo,
-            alert: existing.alert,
-            observacion: existing.observacion || "",
-          });
-          setExistingConfigId(existing.id);
+        const historyResponse = await apiCommands.getSensorHistory(moduloId, 0);
+        const availableKeys = detectAvailableValueKeys(historyResponse.data.data ?? []);
+        setDetectedValueKeys(availableKeys);
+        
+        if (availableKeys.length > 0) {
+          setConfig((prev) => ({ ...prev, value: availableKeys[0] }));
+        }
+        
+        try {
+          const configResponse = await apiCommands.getSensorConfigs(moduloId);
+          if (configResponse.data.success && configResponse.data.data.length > 0) {
+            const existing = configResponse.data.data[0];
+            const savedValue = existing.value || "temp";
+            setConfig({
+              value: availableKeys.includes(savedValue) ? savedValue : (availableKeys[0] || "temp"),
+              minimo: existing.minimo,
+              maximo: existing.maximo,
+              alert: existing.alert,
+              observacion: existing.observacion || "",
+            });
+          }
+        } catch (configErr) {
+          console.log("No hay config guardada para este sensor");
         }
       } catch (err: any) {
-        console.error("Error al cargar config:", err);
+        console.error("Error al cargar datos del sensor:", err);
       } finally {
         setLoading(false);
       }
@@ -137,7 +182,7 @@ export const SensorAlertas = () => {
                   onChange={handleChange}
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 >
-                  {VALUE_OPTIONS.map((opt) => (
+                  {valueOptions.map((opt) => (
                     <option key={opt.value} value={opt.value}>{opt.label}</option>
                   ))}
                 </select>
