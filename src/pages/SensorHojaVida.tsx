@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiSensor, getSensorImageUrl } from "@/api/sensor";
-import type { HojaVida } from "@/api/sensor";
+import type { HojaVida, GetHojaVida } from "@/api/sensor";
 import { ArrowLeft, Save, FileText, Upload } from "lucide-react";
 
 const emptyHv: HojaVida = {
@@ -37,7 +37,17 @@ export const SensorHojaVida = () => {
       try {
         const data = await apiSensor.getSensor(areaId, moduloId);
         if (data.sensor.hv) {
-          setHv(data.sensor.hv);
+          const hvData = data.sensor.hv as unknown as GetHojaVida;
+          setHv({
+            nombre: hvData.nombre ?? "",
+            marca: hvData.marca ?? "",
+            modelo: hvData.modelo ?? "",
+            serie: hvData.serial ?? "",
+            area: hvData.area ?? "",
+            fechaInstalacion: hvData.instalacion ?? "",
+            responsable: hvData.responsable ?? "",
+            fechaVerificacion: hvData.verificacion ?? "",
+          });
           if (data.sensor.hv.image) {
             setImagePreview(getSensorImageUrl(data.sensor.hv.image));
           }
@@ -96,7 +106,7 @@ export const SensorHojaVida = () => {
       console.log("Guardando hoja de vida...", hv);
       const resp = await apiSensor.updateHojaVida(areaId, moduloId, hv);
       console.log("Hoja de vida actualizada:", resp);
-      
+
       setSuccess(true);
       //setTimeout(() => navigate(-1), 1500);
     } catch (err: any) {

@@ -29,6 +29,18 @@ export interface HojaVida {
   image?: string;
 }
 
+export interface GetHojaVida {
+  nombre: string;
+  marca: string;
+  modelo: string;
+  serial: string;
+  area: string;
+  instalacion: string;
+  responsable: string;
+  verificacion: string;
+  image?: string;
+}
+
 export interface Mantenimiento {
   _id: string;
   fecha: string;
