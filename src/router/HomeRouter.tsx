@@ -8,11 +8,13 @@ import { AdminAreasHosts } from "@/components/AdminAreasHosts"
 import { User } from "@/pages/User"
 import { Sensors } from "@/pages/Sensors"
 import { EntitySensors } from "@/pages/EntitySensors"
+import { EntityAlerts } from "@/pages/EntityAlerts"
 import { EntityCharts } from "@/pages/EntityCharts"
 import { RegisterMantenimiento } from "@/pages/RegisterMantenimiento"
 import { MantenimientoHistory } from "@/pages/MantenimientoHistory"
 import { SensorHojaVida } from "@/pages/SensorHojaVida"
 import { SensorAlertas } from "@/pages/SensorAlertas"
+import { Alerts } from "@/pages/Alerts"
 
 
 
@@ -37,6 +39,8 @@ export const HomeRouter = () => {
             <Route path="/users" element={<User />} />
             <Route path="/sensors" element={<Sensors />} />
             <Route path="/sensors/:entityId" element={<EntitySensors />} />
+            <Route path="/alerts" element={<Alerts />} />
+            <Route path="/alerts/:entityId" element={<EntityAlerts />} />
             <Route path="/charts" element={<EntityCharts />} />
             <Route path="/mantenimiento/:areaId/:moduloId" element={<RegisterMantenimiento />} />
             <Route path="/mantenimiento/history/:areaId/:moduloId" element={<MantenimientoHistory />} />
