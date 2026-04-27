@@ -15,6 +15,7 @@ import { MantenimientoHistory } from "@/pages/MantenimientoHistory"
 import { SensorHojaVida } from "@/pages/SensorHojaVida"
 import { SensorAlertas } from "@/pages/SensorAlertas"
 import { Alerts } from "@/pages/Alerts"
+import { Profile } from "@/pages/Profile"
 
 
 
@@ -46,6 +47,7 @@ export const HomeRouter = () => {
             <Route path="/mantenimiento/history/:areaId/:moduloId" element={<MantenimientoHistory />} />
             <Route path="/sensor/hoja-vida/:areaId/:moduloId" element={<SensorHojaVida />} />
             <Route path="/sensor/alertas/:moduloId" element={<SensorAlertas />} />
+            <Route path="/profile" element={<Profile />} />
             <Route path="/*" element={<Navigate to="/"/>} />
 
           </Routes>

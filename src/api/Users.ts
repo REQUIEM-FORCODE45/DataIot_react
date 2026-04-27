@@ -110,6 +110,11 @@ export const apiUsuarios = {
     const response = await apiUser.put(`/update/${id_user}/sedes`, { sedes });
     return response.data;
   },
+
+  deleteUser: async (id: string) => {
+    const response = await apiUser.delete(`/delete/${id}`);
+    return response.data;
+  },
 };
 
 export default apiUser;

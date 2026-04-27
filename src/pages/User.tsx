@@ -21,6 +21,7 @@ export const User = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserData | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deleteUser, setDeleteUser] = useState<UserData | null>(null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -655,12 +656,50 @@ export const User = () => {
                     {user.state === 'active' ? 'Activo' : 'Inactivo'}
                   </button>
 
+                  {/* Botón de Eliminar */}
+                  <button 
+                    onClick={() => setDeleteUser(user)}
+                    title="Eliminar usuario"
+                    className="px-3 py-1 text-xs font-bold uppercase rounded-full border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 cursor-pointer transition-colors w-full md:w-auto text-center"
+                  >
+                    Eliminar
+                  </button>
+
                 </div>
               </div>
             );
           })}
         </div>
       )}
+
+      <Dialog open={!!deleteUser} onOpenChange={(open) => !open && setDeleteUser(null)}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="text-red-600">Eliminar Usuario</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            ¿Estás seguro de eliminar al usuario <strong>"{deleteUser?.profile?.name || deleteUser?.registro?.email}"</strong>? Esta acción no se puede deshacer.
+          </p>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setDeleteUser(null)}>Cancelar</Button>
+            <Button 
+              variant="destructive" 
+              onClick={async () => {
+                if (!deleteUser?._id) return;
+                try {
+                  await apiUsuarios.deleteUser(deleteUser._id);
+                  setUsers(users.filter(u => u._id !== deleteUser._id));
+                  setDeleteUser(null);
+                } catch (error) {
+                  console.error("Error al eliminar usuario:", error);
+                }
+              }}
+            >
+              Eliminar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

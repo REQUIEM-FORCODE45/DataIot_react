@@ -1,4 +1,4 @@
-import { Activity, Settings, Microscope, ChevronUp, User2, LineChart, Bell } from "lucide-react"
+import { Activity, Settings, Microscope, ChevronUp, User2, LineChart, Bell, UserCircle } from "lucide-react"
 import { useAuthStore } from "@/hooks/useAuthStore"
 import { usePermissions } from "@/hooks/usePermissions"
 import { Link } from "react-router-dom"
@@ -76,8 +76,11 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent side="top" className="w-[--radix-dropdown-menu-trigger-width]">
-                <DropdownMenuItem className="text-[#94a3b8] hover:text-white hover:bg-white/10">
-                  <span>Cuenta</span>
+                <DropdownMenuItem asChild>
+                  <Link to="/profile" className="text-[#94a3b8] hover:text-white hover:bg-white/10 cursor-pointer">
+                    <UserCircle size={16} className="mr-2" />
+                    <span>Mi perfil</span>
+                  </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => { startLogout(); }}

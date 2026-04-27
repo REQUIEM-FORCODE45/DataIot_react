@@ -1,11 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Building2, PlusCircle, Mail, Phone, MapPin } from "lucide-react";
-
-// Importa tu servicio y tipos (ajusta las rutas según la estructura de tu proyecto)
 import { apiEntidades } from "@/api/Sedes";
 import type { Entidad } from "@/types/entidad";
-
-// Componentes de Shadcn UI (ajusta las rutas según tu alias '@')
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -14,17 +10,15 @@ import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
 import { usePermissions } from "@/hooks/usePermissions";
 
-
-
 export const Sedes = () => {
   const navigate = useNavigate();
   const [entidades, setEntidades] = useState<Entidad[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [deleteEntidad, setDeleteEntidad] = useState<Entidad | null>(null);
   const { filterEntitiesByAccess, isSuperAdmin, canEditSites } = usePermissions();
 
-  // Estado para el formulario de nueva entidad
   const [formData, setFormData] = useState({
     name: "",
     nit: "",
@@ -33,7 +27,6 @@ export const Sedes = () => {
     phone: "",
   });
 
-  // Función para cargar las entidades desde el backend
   const fetchEntidades = async () => {
     setLoading(true);
     try {
@@ -50,21 +43,19 @@ export const Sedes = () => {
     fetchEntidades();
   }, []);
 
-  // Manejador de cambios en los inputs del formulario
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Función para enviar el formulario y registrar la entidad
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
       await apiEntidades.register(formData);
-      setIsModalOpen(false); // Cierra el modal si es exitoso
-      setFormData({ name: "", nit: "", verif: "", email: "", phone: "" }); // Limpia el formulario
-      fetchEntidades(); // Recarga la lista
+      setIsModalOpen(false);
+      setFormData({ name: "", nit: "", verif: "", email: "", phone: "" });
+      fetchEntidades();
     } catch (error) {
       console.error("Error al registrar la entidad:", error);
     } finally {
@@ -72,16 +63,24 @@ export const Sedes = () => {
     }
   };
 
+  const handleDelete = async () => {
+    if (!deleteEntidad?._id) return;
+    try {
+      await apiEntidades.deleteEntidad(deleteEntidad._id);
+      setEntidades(entidades.filter(e => e._id !== deleteEntidad._id));
+      setDeleteEntidad(null);
+    } catch (error) {
+      console.error("Error al eliminar entidad:", error);
+    }
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
-      {/* Encabezado y Botón de Nueva Entidad */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <p className="text-xs uppercase tracking-[0.3em] text-[#00554f] font-medium">Administración</p>
           <h1 className="text-3xl font-bold tracking-tight text-[#1e293b] mt-1">Entidades y Sedes</h1>
-          <p className="text-[#64748b] mt-1">
-            Gestiona las entidades registradas y administra sus sedes, áreas y módulos.
-          </p>
+          <p className="text-[#64748b] mt-1">Gestiona las entidades registradas y administra sus sedes, áreas y módulos.</p>
         </div>
 
         {isSuperAdmin && (
@@ -96,13 +95,11 @@ export const Sedes = () => {
               <DialogHeader>
                 <DialogTitle className="text-[#1e293b]">Registrar Nueva Entidad</DialogTitle>
               </DialogHeader>
-              
               <form onSubmit={handleRegister} className="space-y-4 py-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Nombre de la Entidad</Label>
                   <Input id="name" name="name" placeholder="Ej. Sensotic SAS" value={formData.name} onChange={handleInputChange} required />
                 </div>
-                
                 <div className="grid grid-cols-4 gap-4">
                   <div className="col-span-3 space-y-2">
                     <Label htmlFor="nit">NIT</Label>
@@ -113,33 +110,24 @@ export const Sedes = () => {
                     <Input id="verif" name="verif" placeholder="8" value={formData.verif} onChange={handleInputChange} required />
                   </div>
                 </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="email">Correo Electrónico</Label>
                   <Input id="email" name="email" type="email" placeholder="contacto@empresa.com" value={formData.email} onChange={handleInputChange} required />
                 </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="phone">Teléfono de contacto</Label>
                   <Input id="phone" name="phone" placeholder="310 000 0000" value={formData.phone} onChange={handleInputChange} />
                 </div>
-
                 <div className="flex justify-end gap-3 pt-4">
-                  <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
-                    Cancelar
-                  </Button>
-                  <Button type="submit" disabled={isSubmitting} className="bg-[#00554f] hover:bg-[#004a45] text-white">
-                    {isSubmitting ? "Guardando..." : "Guardar Entidad"}
-                  </Button>
+                  <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
+                  <Button type="submit" disabled={isSubmitting} className="bg-[#00554f] hover:bg-[#004a45] text-white">{isSubmitting ? "Guardando..." : "Guardar Entidad"}</Button>
                 </div>
               </form>
-
             </DialogContent>
           </Dialog>
         )}
       </div>
 
-      {/* Grid de Entidades */}
       {loading ? (
         <div className="flex justify-center items-center h-40">
           <p className="text-muted-foreground animate-pulse">Cargando entidades...</p>
@@ -160,12 +148,8 @@ export const Sedes = () => {
                     <Building2 size={20} />
                   </div>
                   <div>
-                    <CardTitle className="text-lg leading-tight line-clamp-1 text-[#1e293b]" title={entidad.name}>
-                      {entidad.name}
-                    </CardTitle>
-                    <p className="text-xs text-[#64748b] mt-1">
-                      NIT: {entidad.nit}-{entidad.verif}
-                    </p>
+                    <CardTitle className="text-lg leading-tight line-clamp-1 text-[#1e293b]" title={entidad.name}>{entidad.name}</CardTitle>
+                    <p className="text-xs text-[#64748b] mt-1">NIT: {entidad.nit}-{entidad.verif}</p>
                   </div>
                 </div>
               </CardHeader>
@@ -185,20 +169,33 @@ export const Sedes = () => {
                   <span>{entidad.sedes?.length || 0} Sedes registradas</span>
                 </div>
               </CardContent>
-              <CardFooter className="pt-0 pb-4">
+              <CardFooter className="pt-0 pb-4 flex flex-col gap-2">
                 {canEditSites && (
-                  <Button
-                    className="w-full bg-[#00554f] hover:bg-[#004a45] text-white"
-                    onClick={() => navigate(`/entidades/${entidad._id}/sedes`)}
-                  >
-                    Administrar Sedes
-                  </Button>
+                  <Button className="w-full bg-[#00554f] hover:bg-[#004a45] text-white" onClick={() => navigate(`/entidades/${entidad._id}/sedes`)}>Administrar Sedes</Button>
+                )}
+                {isSuperAdmin && (
+                  <Button variant="outline" className="w-full border-red-200 text-red-700 hover:bg-red-50" onClick={() => setDeleteEntidad(entidad)}>Eliminar Entidad</Button>
                 )}
               </CardFooter>
             </Card>
           ))}
         </div>
       )}
+
+      <Dialog open={!!deleteEntidad} onOpenChange={(open) => !open && setDeleteEntidad(null)}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="text-red-600">Eliminar Entidad</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            ¿Estás seguro de eliminar la entidad <strong>"{deleteEntidad?.name}"</strong>? Esta acción no se puede deshacer.
+          </p>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setDeleteEntidad(null)}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleDelete}>Eliminar</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
