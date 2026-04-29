@@ -55,13 +55,18 @@ export const apiEntidades = {
     return response.data;
   },
 
-  addModulo: async (id_entidad: string, id_sede: string, id_area: string, data: Partial<Modulo>) => {
+addModulo: async (id_entidad: string, id_sede: string, id_area: string, data: Partial<Modulo>) => {
     const response = await apiClient.post(`/add/${id_entidad}/${id_sede}/${id_area}/modulo`, data);
     return response.data;
   },
 
+  updateEntidad: async (id: string, data: Partial<Entidad>) => {
+    const response = await apiClient.put(`/update/${id}`, data);
+    return response.data;
+  },
+
   deleteEntidad: async (id: string) => {
-    const response = await apiClient.delete(`/entidad/delete/${id}`);
+    const response = await apiClient.delete(`/delete/${id}`);
     return response.data;
   },
 };

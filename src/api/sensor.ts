@@ -128,6 +128,11 @@ export const apiSensor = {
     const response = await sensorApi.delete<{ deleted: boolean }>(`/${moduloId}`);
     return response.data.deleted;
   },
+
+  updateSensorModule: async (moduloId: string, data: any): Promise<any> => {
+    const response = await sensorApi.put(`/update/${moduloId}`, data);
+    return response.data;
+  },
 };
 
 export default sensorApi;

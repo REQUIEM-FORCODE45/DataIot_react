@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { apiEntidades } from "@/api/Sedes";
 import type { Entidad } from "@/types/entidad";
 import { usePermissions } from "@/hooks/usePermissions";
-import { ChevronDown, ChevronRight, Layers, MapPin, Building2, Cpu, Bell } from "lucide-react";
+import { ChevronDown, ChevronRight, Layers, MapPin, Building2, Cpu } from "lucide-react";
 
 const countModules = (entity: Entidad) =>
   entity.sedes?.reduce(

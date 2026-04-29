@@ -1,6 +1,6 @@
 import axios from "axios";
 
-import type { ModuleReading, MultiSensorHistoryResponse, SensorHistoryResponse } from "@/types/sensor";
+import type { ModuleReading, MultiSensorHistoryResponse, SensorHistoryResponse, AsyncJobResponse, JobStatusResponse } from "@/types/sensor";
 
 const commandBaseUrl = import.meta.env.VITE_COMMAND_BASE_URL;
 
@@ -71,6 +71,15 @@ export const apiCommands = {
     const initParam = encodeURIComponent(init);
     const endParam = encodeURIComponent(end);
     return commandApi.get<MultiSensorHistoryResponse>(`/gets/${sensorsParam}/${initParam}/${endParam}/data`);
+  },
+  getSensorsRangeAsync: (sensorIds: string[], init: string, end: string) => {
+    const sensorsParam = encodeURIComponent(sensorIds.join(","));
+    const initParam = encodeURIComponent(init);
+    const endParam = encodeURIComponent(end);
+    return commandApi.get<AsyncJobResponse>(`/gets/async/${sensorsParam}/${initParam}/${endParam}/data`);
+  },
+  getJobStatus: (jobId: string) => {
+    return commandApi.get<JobStatusResponse>(`/job/${jobId}`);
   },
   getSensorConfigs: (moduloId: string) => commandApi.get<SensorConfigResponse>(`/configs/module/${moduloId}`),
   setSensorConfig: (data: SetConfigBody) => commandApi.post("/setConfig", data),

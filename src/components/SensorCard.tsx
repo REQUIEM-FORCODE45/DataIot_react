@@ -119,13 +119,13 @@ export const SensorCard: FC<SensorCardProps> = memo(({ module, history, areaId }
         <div className="flex items-start justify-between gap-2">
           <div>
             <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Sensor</p>
-            <CardTitle className="text-lg leading-tight">{module.id_modulo}</CardTitle>
+            <CardTitle className="text-lg font-semibold text-[#1e293b] leading-tight">{module.id_modulo}</CardTitle>
           </div>
-          <span className="rounded-full border border-border/70 px-2 py-1 text-[11px] text-muted-foreground">
+          <span className="rounded-full border border-border/70 px-2 py-1 text-xs font-medium text-[#1e293b]">
             {title }
           </span>
         </div>
-        <p className="text-xs text-muted-foreground">{module.ubicacion || "Sin ubicación"}</p>
+        <p className="text-xs font-medium text-[#475569]">{module.ubicacion || "Sin ubicación"}</p>
         {areaId && (
           <div className="flex gap-2 mt-2">
             <Button 
@@ -135,7 +135,7 @@ export const SensorCard: FC<SensorCardProps> = memo(({ module, history, areaId }
               onClick={() => navigate(`/sensor/hoja-vida/${areaId}/${module.id_modulo}`)}
             >
               <FileText size={14} />
-              Características
+              Propiedades
             </Button>
             <Button 
               variant="outline" 
@@ -191,7 +191,7 @@ export const SensorCard: FC<SensorCardProps> = memo(({ module, history, areaId }
             </p>
           )
         )}
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs font-medium text-[#64748b]">
           {timestamp ? `Última lectura: ${formatTimestamp(timestamp)}` : "Sin fecha de lectura"}
         </p>
       </CardContent>

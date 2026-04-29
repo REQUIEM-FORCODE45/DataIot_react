@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Network, Layers, PlusCircle, Server, Cpu, Trash2 } from "lucide-react";
 
+import { Pencil } from "lucide-react";
 import { apiEntidades } from "@/api/Sedes";
 import { apiSensor } from "@/api/sensor";
 import type { Sede, Area } from "@/types/entidad";
@@ -47,6 +48,8 @@ export const AdminAreasHosts = () => {
   
   // Estado para saber a qué área le estamos agregando un módulo
   const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null);
+  // Estado para edición de módulo
+  const [editingModulo, setEditingModulo] = useState<null | { id_modulo: string; modulo: string; ubicacion: string; host: string; type_modulo: string }>(null);
 
   // Estados para formularios
   const [hostData, setHostData] = useState({ host: "" });
@@ -142,6 +145,39 @@ export const AdminAreasHosts = () => {
       fetchSedeData();
     } catch (error) {
       console.error("Error al eliminar módulo:", error);
+    }
+  };
+
+  const handleOpenEditModulo = (areaId: string, mod: { id_modulo: string; modulo: string; ubicacion: string; host: string; type_modulo: string }) => {
+    setSelectedAreaId(areaId);
+    setEditingModulo(mod);
+    setModuloData({
+      ubicacion: mod.ubicacion,
+      host: mod.host || "0.0.0.0",
+      type_modulo: mod.type_modulo,
+      modulo: mod.modulo,
+      id_modulo: mod.id_modulo,
+    });
+    setIsModuloModalOpen(true);
+  };
+
+  const handleEditModulo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingModulo) return;
+    try {
+      const response = await apiSensor.updateSensorModule(editingModulo.id_modulo, {
+        module: moduloData.modulo,
+        ubicacion: moduloData.ubicacion,
+        host: moduloData.host,
+        tipo: moduloData.type_modulo,
+      });
+      console.log("Respuesta al editar módulo:", response);
+      setIsModuloModalOpen(false);
+      setEditingModulo(null);
+      setModuloData({ ubicacion: "", host: "", type_modulo: "", modulo: "", id_modulo: "" });
+      fetchSedeData();
+    } catch (error) {
+      console.error("Error al editar módulo:", error);
     }
   };
 
@@ -296,12 +332,18 @@ export const AdminAreasHosts = () => {
                               onClick={() => {
                                 setSelectedAreaId(area._id!);
                                 handleDeleteModulo(mod.id_modulo);
-                                console.log(mod.id_modulo);
                               }}
                               className="absolute top-2 right-2 p-1.5 rounded-md opacity-0 group-hover:opacity-100 hover:bg-red-100 text-red-600 transition-opacity"
                               title="Eliminar módulo"
                             >
                               <Trash2 size={14} />
+                            </button>
+                            <button
+                              onClick={() => handleOpenEditModulo(area._id!, mod)}
+                              className="absolute top-2 right-10 p-1.5 rounded-md opacity-0 group-hover:opacity-100 hover:bg-blue-100 text-blue-600 transition-opacity"
+                              title="Editar módulo"
+                            >
+                              <Pencil size={14} />
                             </button>
                           </div>
                         ))}
@@ -322,33 +364,41 @@ export const AdminAreasHosts = () => {
         </div>
       </div>
 
-      {/* MODAL GLOBAL PARA AÑADIR MÓDULO (Sensor) */}
-      <Dialog open={isModuloModalOpen} onOpenChange={setIsModuloModalOpen}>
+      {/* MODAL GLOBAL PARA AÑADIR/EDITAR MÓDULO (Sensor) */}
+      <Dialog open={isModuloModalOpen} onOpenChange={(open) => {
+        setIsModuloModalOpen(open);
+        if (!open) {
+          setEditingModulo(null);
+          setModuloData({ ubicacion: "", host: "", type_modulo: "", modulo: "", id_modulo: "" });
+        }
+      }}>
         <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader><DialogTitle className="text-[#1e293b]">Registrar Sensor/Módulo</DialogTitle></DialogHeader>
-          <form onSubmit={handleAddModulo} className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="tipo_sensor" className="text-[#64748b]">Tipo de Sensor</Label>
-              <select
-                id="tipo_sensor"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                value={selectedTipoSensor}
-                onChange={async (e) => {
-                  const tipo = e.target.value as "MT" | "MA" | "ME";
-                  setSelectedTipoSensor(tipo);
-                  const newId = await generateUniqueIdModulo(tipo, entidadName);
-                  setModuloData(prev => ({
-                    ...prev,
-                    type_modulo: tipoSensorMap[tipo],
-                    id_modulo: newId,
-                  }));
-                }}
-              >
-                <option value="MT">MT - Temperatura</option>
-                <option value="MA">MA - Ambiente</option>
-                <option value="ME">ME - Energía</option>
-              </select>
-            </div>
+          <DialogHeader><DialogTitle className="text-[#1e293b]">{editingModulo ? "Editar Sensor/Módulo" : "Registrar Sensor/Módulo"}</DialogTitle></DialogHeader>
+          <form onSubmit={editingModulo ? handleEditModulo : handleAddModulo} className="space-y-4 py-4">
+            {!editingModulo && (
+              <div className="space-y-2">
+                <Label htmlFor="tipo_sensor" className="text-[#64748b]">Tipo de Sensor</Label>
+                <select
+                  id="tipo_sensor"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={selectedTipoSensor}
+                  onChange={async (e) => {
+                    const tipo = e.target.value as "MT" | "MA" | "ME";
+                    setSelectedTipoSensor(tipo);
+                    const newId = await generateUniqueIdModulo(tipo, entidadName);
+                    setModuloData(prev => ({
+                      ...prev,
+                      type_modulo: tipoSensorMap[tipo],
+                      id_modulo: newId,
+                    }));
+                  }}
+                >
+                  <option value="MT">MT - Temperatura</option>
+                  <option value="MA">MA - Ambiente</option>
+                  <option value="ME">ME - Energía</option>
+                </select>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="id_modulo" className="text-[#64748b]">ID Hardware</Label>
@@ -372,7 +422,9 @@ export const AdminAreasHosts = () => {
               <Input id="mod_host" placeholder="Ej. 192.168.1.100" value={moduloData.host || "0.0.0.0"} onChange={(e) => setModuloData({...moduloData, host: e.target.value})} />
             </div>
             <div className="flex justify-end pt-2">
-              <Button type="submit" className="bg-[#00554f] hover:bg-[#004a45] text-white">Guardar Sensor</Button>
+              <Button type="submit" className="bg-[#00554f] hover:bg-[#004a45] text-white">
+                {editingModulo ? "Guardar Cambios" : "Guardar Sensor"}
+              </Button>
             </div>
           </form>
         </DialogContent>

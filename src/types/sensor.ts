@@ -55,6 +55,20 @@ export interface SensorHistoryGroup {
 
 export type MultiSensorHistoryResponse = Record<string, SensorHistoryGroup>;
 
+export interface AsyncJobResponse {
+  success: boolean;
+  jobId: string;
+  message: string;
+}
+
+export interface JobStatusResponse {
+  success: boolean;
+  status: "pending" | "processing" | "completed" | "failed";
+  result?: Record<string, SensorHistoryGroup>;
+  error?: string;
+  completedAt?: string;
+}
+
 export interface ModuleReading {
   module_id: string;
   last_data_timestamp: string;

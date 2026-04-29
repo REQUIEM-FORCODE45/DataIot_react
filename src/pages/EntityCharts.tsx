@@ -8,7 +8,7 @@ import { apiEntidades } from "@/api/Sedes";
 import type { Entidad, Modulo } from "@/types/entidad";
 import type { SensorHistoryRecord } from "@/types/sensor";
 import { usePermissions } from "@/hooks/usePermissions";
-import { Building2, Cpu, Layers, LineChart, RefreshCw, ChevronDown } from "lucide-react";
+import { Building2, Cpu, Layers, LineChart, RefreshCw, ChevronDown, Download } from "lucide-react";
 
 const PlotlyChart = lazy(() => import("@/components/PlotlyChart"));
 
@@ -116,6 +116,34 @@ const PLOTLY_LAYOUT = {
 
 const PLOTLY_CONFIG = { displayModeBar: false, responsive: true };
 
+const generateCSV = (
+  records: SensorHistoryRecord[],
+  valueKeys: string[]
+): string => {
+  const headers = ["fecha", ...valueKeys.map(getValueLabel)];
+  const rows = records.map((record) => {
+    const fecha = record.createAt ?? record.createdAt ?? "";
+    const values = valueKeys.map((key) => {
+      const val = record[key as keyof SensorHistoryRecord];
+      return typeof val === "number" ? val : "";
+    });
+    return [fecha, ...values].join(",");
+  });
+  return [headers.join(","), ...rows].join("\n");
+};
+
+const downloadCSV = (csv: string, filename: string): void => {
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
+
 const ChartSkeleton = () => (
   <div className="w-full h-[240px] rounded-lg animate-pulse bg-[#f1f5f9]" />
 );
@@ -128,7 +156,8 @@ const SensorValueChart = ({
   endDate,
   records,
   onRemove,
-}: ChartItem & { onRemove: () => void }) => {
+  onDownload,
+}: ChartItem & { onRemove: () => void; onDownload: () => void }) => {
   const points = useMemo<{ x: string; y: number }[]>(() => {
     return records
       .map((record) => ({
@@ -167,6 +196,9 @@ const SensorValueChart = ({
             <span className="rounded-full border border-border/70 px-2 py-1 text-[11px] font-semibold text-muted-foreground">
               {getValueLabel(valueKey)}
             </span>
+            <Button size="sm" variant="ghost" onClick={onDownload} className="text-[#003d3a] hover:bg-[#003d3a]/10">
+              <Download size={14} />
+            </Button>
             <Button size="sm" variant="ghost" onClick={onRemove} className="text-[#003d3a] hover:bg-[#003d3a]/10">
               Eliminar
             </Button>
@@ -212,6 +244,7 @@ export const EntityCharts = () => {
   const [historyError, setHistoryError] = useState<string | null>(null);
   const [detectedValueKeys, setDetectedValueKeys] = useState<string[]>([]);
   const [detectingValues, setDetectingValues] = useState(false);
+  const [pollingStatus, setPollingStatus] = useState<string | null>(null);
   const { filterEntitiesByAccess } = usePermissions();
 
   const now = useMemo(() => new Date(), []);
@@ -331,32 +364,28 @@ export const EntityCharts = () => {
   }, []);
 
   const detectAndSetValues = useCallback(async (sensorId: string) => {
-    if (!sensorId || !initDate || !endDate) {
+    if (!sensorId) {
       return;
     }
     setDetectingValues(true);
     setHistoryError(null);
     try {
-      const apiInit = toApiDate(initDate);
-      const apiEnd = toApiDate(endDate);
-      const response = await apiCommands.getSensorsRange([sensorId], apiInit, apiEnd);
-      
-      const records = response.data?.[sensorId]?.data ?? [];
+      const response = await apiCommands.getSensorHistory(sensorId, 0);
+      const records = response.data?.data ?? [];
       const availableKeys = detectAvailableValueKeys(records);
       
       if (availableKeys.length === 0) {
-        setHistoryError("No se encontraron variables con datos en el rango seleccionado.");
-        return;
+        setHistoryError("No se encontraron variables con datos.");
+      } else {
+        setDetectedValueKeys(availableKeys);
+        setSelectedValues(new Set(availableKeys));
       }
-      
-      setDetectedValueKeys(availableKeys);
-      setSelectedValues(new Set(availableKeys));
-    } catch (error) {
+    } catch {
       setHistoryError("No fue posible detectar las variables.");
     } finally {
       setDetectingValues(false);
     }
-  }, [initDate, endDate]);
+  }, []);
 
   useEffect(() => {
     if (selectedSensorId) {
@@ -374,17 +403,66 @@ export const EntityCharts = () => {
     }
     setLoadingHistory(true);
     setHistoryError(null);
+    setPollingStatus("Creando job...");
     try {
       const sensorId = selectedSensorId;
       const sensor = sensorMap.get(sensorId);
-      if (!sensor) return;
+      if (!sensor) {
+        setLoadingHistory(false);
+        return;
+      }
       
       const apiInit = toApiDate(initDate);
       const apiEnd = toApiDate(endDate);
-      const response = await apiCommands.getSensorsRange([sensorId], apiInit, apiEnd);
-      const additions: ChartItem[] = [];
       
-      const records = response.data?.[sensorId]?.data ?? [];
+      const jobResponse = await apiCommands.getSensorsRangeAsync([sensorId], apiInit, apiEnd);
+      const jobId = jobResponse.data?.jobId;
+      
+      if (!jobId) {
+        setHistoryError("No se pudo iniciar el procesamiento.");
+        setLoadingHistory(false);
+        setPollingStatus(null);
+        return;
+      }
+      
+      setPollingStatus("Procesando...");
+      const startTime = Date.now();
+      const TIMEOUT = 2 * 60 * 1000;
+      const INTERVAL = 2000;
+      
+      let result: Record<string, { data: SensorHistoryRecord[] }> | undefined;
+      
+      while (true) {
+        await new Promise((resolve) => setTimeout(resolve, INTERVAL));
+        
+        const statusResponse = await apiCommands.getJobStatus(jobId);
+        const status = statusResponse.data?.status;
+        
+        if (status === "completed") {
+          result = statusResponse.data?.result;
+          break;
+        }
+        
+        if (status === "failed") {
+          setHistoryError(statusResponse.data?.error ?? "Error en el procesamiento.");
+          setLoadingHistory(false);
+          setPollingStatus(null);
+          return;
+        }
+        
+        if (Date.now() - startTime > TIMEOUT) {
+          setHistoryError("Tiempo de espera agotado. Intenta con un rango menor.");
+          setLoadingHistory(false);
+          setPollingStatus(null);
+          return;
+        }
+        
+        setPollingStatus(`Procesando... ${Math.round((Date.now() - startTime) / 1000)}s`);
+      }
+      
+      const additions: ChartItem[] = [];
+      const records = result?.[sensorId]?.data ?? [];
+      
       selectedValues.forEach((valueKey) => {
         const validRecords = records.filter((r: SensorHistoryRecord) => {
           const val = r[valueKey as keyof SensorHistoryRecord];
@@ -402,21 +480,46 @@ export const EntityCharts = () => {
           });
         }
       });
+      
       if (additions.length === 0) {
         setHistoryError("No se encontraron datos para las variables seleccionadas.");
       } else {
         setChartItems((prev) => [...prev, ...additions]);
       }
-    } catch (error) {
+    } catch {
       setHistoryError("No fue posible cargar el histórico.");
     } finally {
       setLoadingHistory(false);
+      setPollingStatus(null);
     }
   }, [selectedSensorId, selectedValues, initDate, endDate, sensorMap]);
 
   const removeChart = useCallback((id: string) => {
     setChartItems((prev) => prev.filter((item) => item.id !== id));
   }, []);
+
+  const downloadSingleCSV = useCallback((item: ChartItem) => {
+    const csv = generateCSV(item.records, [item.valueKey]);
+    const filename = `${item.sensorId}_${item.valueKey}_${item.initDate.replace(/\s|T/g, "-")}_${item.endDate.replace(/\s|T/g, "-")}.csv`;
+    downloadCSV(csv, filename);
+  }, []);
+
+  const downloadAllCSV = useCallback(() => {
+    const valueKeys = [...new Set(chartItems.map((item) => item.valueKey))];
+    const allRecords = chartItems.flatMap((item) => item.records);
+    allRecords.sort((a, b) => {
+      const dateA = a.createAt ?? a.createdAt ?? "";
+      const dateB = b.createAt ?? b.createdAt ?? "";
+      return dateA.localeCompare(dateB);
+    });
+    const uniqueRecords = allRecords.filter((record, idx, arr) => {
+      const date = record.createAt ?? record.createdAt;
+      return idx === 0 || (arr[idx - 1].createAt ?? arr[idx - 1].createdAt) !== date;
+    });
+    const csv = generateCSV(uniqueRecords, valueKeys);
+    const filename = `historico_${selectedEntityId}_${initDate.replace(/\s|T/g, "-")}_${endDate.replace(/\s|T/g, "-")}.csv`;
+    downloadCSV(csv, filename);
+  }, [chartItems, selectedEntityId, initDate, endDate]);
 
   const totalSedes = selectedEntity?.sedes?.length ?? 0;
   const totalAreas = sensorsByArea.length;
@@ -540,7 +643,10 @@ export const EntityCharts = () => {
             {detectingValues && (
               <span className="text-xs text-[#64748b]">Detectando variables...</span>
             )}
-            <Button type="button" onClick={addCharts} disabled={!selectedSensorId || selectedValues.size === 0} className="bg-[#003d3a] hover:bg-[#002f2d] text-white gap-2">
+            {pollingStatus && (
+              <span className="text-xs text-[#00554f] animate-pulse">{pollingStatus}</span>
+            )}
+            <Button type="button" onClick={addCharts} disabled={!selectedSensorId || selectedValues.size === 0 || !!pollingStatus} className="bg-[#003d3a] hover:bg-[#002f2d] text-white gap-2">
               <RefreshCw size={16} />
               Agregar gráfica
             </Button>
@@ -621,7 +727,15 @@ export const EntityCharts = () => {
           <div>
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-base font-semibold text-[#1e293b]">Gráficas seleccionadas</h2>
-              <span className="text-xs text-[#64748b]">{chartItems.length} gráficas</span>
+              <div className="flex items-center gap-2">
+                {chartItems.length > 0 && (
+                  <Button size="sm" variant="outline" onClick={downloadAllCSV} className="h-7 text-xs border-[#003d3a] text-[#003d3a] hover:bg-[#003d3a] hover:text-white gap-1">
+                    <Download size={14} />
+                    CSV
+                  </Button>
+                )}
+                <span className="text-xs text-[#64748b]">{chartItems.length} gráficas</span>
+              </div>
             </div>
             {chartItems.length === 0 ? (
               <Card className="rounded-[12px] border border-dashed border-black/10 p-8 text-center text-[#64748b]">
@@ -634,6 +748,7 @@ export const EntityCharts = () => {
                     key={item.id}
                     {...item}
                     onRemove={() => removeChart(item.id)}
+                    onDownload={() => downloadSingleCSV(item)}
                   />
                 ))}
               </div>

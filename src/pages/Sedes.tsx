@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Building2, PlusCircle, Mail, Phone, MapPin } from "lucide-react";
+import { Building2, PlusCircle, Mail, Phone, MapPin, Pencil } from "lucide-react";
 import { apiEntidades } from "@/api/Sedes";
 import type { Entidad } from "@/types/entidad";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,6 +26,7 @@ export const Sedes = () => {
     email: "",
     phone: "",
   });
+  const [editingEntidad, setEditingEntidad] = useState<Entidad | null>(null);
 
   const fetchEntidades = async () => {
     setLoading(true);
@@ -74,6 +75,23 @@ export const Sedes = () => {
     }
   };
 
+  const handleEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingEntidad?._id) return;
+    setIsSubmitting(true);
+    try {
+      await apiEntidades.updateEntidad(editingEntidad._id, formData);
+      setIsModalOpen(false);
+      setEditingEntidad(null);
+      setFormData({ name: "", nit: "", verif: "", email: "", phone: "" });
+      fetchEntidades();
+    } catch (error) {
+      console.error("Error al actualizar entidad:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -83,8 +101,14 @@ export const Sedes = () => {
           <p className="text-[#64748b] mt-1">Gestiona las entidades registradas y administra sus sedes, áreas y módulos.</p>
         </div>
 
-        {isSuperAdmin && (
-          <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+{isSuperAdmin && (
+          <Dialog open={isModalOpen} onOpenChange={(open) => {
+            if (!open) {
+              setEditingEntidad(null);
+              setFormData({ name: "", nit: "", verif: "", email: "", phone: "" });
+            }
+            setIsModalOpen(open);
+          }}>
             <DialogTrigger asChild>
               <Button className="flex items-center gap-2 bg-[#00554f] hover:bg-[#004a45] text-white rounded-[10px]">
                 <PlusCircle size={18} />
@@ -93,9 +117,11 @@ export const Sedes = () => {
             </DialogTrigger>
             <DialogContent className="sm:max-w-[500px]">
               <DialogHeader>
-                <DialogTitle className="text-[#1e293b]">Registrar Nueva Entidad</DialogTitle>
+                <DialogTitle className="text-[#1e293b]">
+                  {editingEntidad ? "Editar Entidad" : "Registrar Nueva Entidad"}
+                </DialogTitle>
               </DialogHeader>
-              <form onSubmit={handleRegister} className="space-y-4 py-4">
+              <form onSubmit={editingEntidad ? handleEdit : handleRegister} className="space-y-4 py-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Nombre de la Entidad</Label>
                   <Input id="name" name="name" placeholder="Ej. Sensotic SAS" value={formData.name} onChange={handleInputChange} required />
@@ -119,8 +145,14 @@ export const Sedes = () => {
                   <Input id="phone" name="phone" placeholder="310 000 0000" value={formData.phone} onChange={handleInputChange} />
                 </div>
                 <div className="flex justify-end gap-3 pt-4">
-                  <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
-                  <Button type="submit" disabled={isSubmitting} className="bg-[#00554f] hover:bg-[#004a45] text-white">{isSubmitting ? "Guardando..." : "Guardar Entidad"}</Button>
+                  <Button type="button" variant="outline" onClick={() => {
+                    setIsModalOpen(false);
+                    setEditingEntidad(null);
+                    setFormData({ name: "", nit: "", verif: "", email: "", phone: "" });
+                  }}>Cancelar</Button>
+                  <Button type="submit" disabled={isSubmitting} className="bg-[#00554f] hover:bg-[#004a45] text-white">
+                    {isSubmitting ? "Guardando..." : editingEntidad ? "Actualizar" : "Guardar Entidad"}
+                  </Button>
                 </div>
               </form>
             </DialogContent>
@@ -141,8 +173,8 @@ export const Sedes = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {entidades.map((entidad) => (
-            <Card key={entidad._id} className="hover:shadow-md transition-all flex flex-col">
-              <CardHeader className="pb-3 border-b">
+            <Card key={entidad._id} className="hover:shadow-md transition-all flex flex-col group">
+              <CardHeader className="pb-3 border-b relative">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-full bg-[#e7ecf2] flex items-center justify-center text-[#00554f]">
                     <Building2 size={20} />
@@ -152,6 +184,25 @@ export const Sedes = () => {
                     <p className="text-xs text-[#64748b] mt-1">NIT: {entidad.nit}-{entidad.verif}</p>
                   </div>
                 </div>
+                {isSuperAdmin && (
+                  <button
+                    onClick={() => {
+                      setEditingEntidad(entidad);
+                      setFormData({
+                        name: entidad.name || "",
+                        nit: entidad.nit || "",
+                        verif: entidad.verif || "",
+                        email: entidad.email || "",
+                        phone: entidad.phone || "",
+                      });
+                      setIsModalOpen(true);
+                    }}
+                    className="absolute top-3 right-3 p-1.5 rounded-md opacity-0 group-hover:opacity-100 hover:bg-blue-100 text-blue-600 transition-opacity"
+                    title="Editar entidad"
+                  >
+                    <Pencil size={14} />
+                  </button>
+                )}
               </CardHeader>
               <CardContent className="pt-4 flex-grow space-y-3">
                 <div className="flex items-center gap-2 text-sm text-[#64748b]">
