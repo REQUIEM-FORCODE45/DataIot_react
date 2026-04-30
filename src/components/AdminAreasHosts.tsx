@@ -5,6 +5,7 @@ import { ArrowLeft, Network, Layers, PlusCircle, Server, Cpu, Trash2 } from "luc
 import { Pencil } from "lucide-react";
 import { apiEntidades } from "@/api/Sedes";
 import { apiSensor } from "@/api/sensor";
+import Swal from "sweetalert2";
 import type { Sede, Area } from "@/types/entidad";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -139,8 +140,18 @@ export const AdminAreasHosts = () => {
   };
 
   const handleDeleteModulo = async (moduloId: string) => {
-    const confirmDelete = window.confirm(`¿Estás seguro de que deseas eliminar el sensor ${moduloId}?`);
-    if (!confirmDelete) return;
+    const result = await Swal.fire({
+      title: '<span class="text-red-600 text-xl font-semibold">Eliminar Sensor</span>',
+      html: `<p class="text-sm text-muted-foreground">¿Estás seguro de eliminar el sensor <strong>${moduloId}</strong>? Esta acción no se puede deshacer.</p>`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: "#64748b",
+      confirmButtonText: "Eliminar",
+      cancelButtonText: "Cancelar",
+      reverseButtons: true,
+    });
+    if (!result.isConfirmed) return;
     try {
       const response = await apiSensor.deleteSensorModule(moduloId);
       console.log("Respuesta al eliminar módulo:", response);
