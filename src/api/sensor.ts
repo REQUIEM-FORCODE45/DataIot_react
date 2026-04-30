@@ -129,6 +129,12 @@ export const apiSensor = {
     return response.data.deleted;
   },
 
+  deleteSensorModule: async (moduloId: string): Promise<{ message: string; sensor: unknown }> => {
+    const response = await sensorApi.delete<{ message: string; sensor: unknown }>(`/update/${moduloId}`);
+    console.log("DELETE response:", response.data);
+    return response.data;
+  },
+
   updateSensorModule: async (moduloId: string, data: any): Promise<any> => {
     const response = await sensorApi.put(`/update/${moduloId}`, data);
     return response.data;

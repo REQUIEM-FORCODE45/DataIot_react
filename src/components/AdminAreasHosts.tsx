@@ -128,6 +128,7 @@ export const AdminAreasHosts = () => {
     e.preventDefault();
     if (!id_entidad || !id_sede || !selectedAreaId) return;
     try {
+      console.log("Datos a registrar para el módulo:", moduloData);
       await apiEntidades.addModulo(id_entidad, id_sede, selectedAreaId, moduloData);
       setIsModuloModalOpen(false);
       setModuloData({ ubicacion: "", host: "", type_modulo: "", modulo: "", id_modulo: "" });
@@ -138,9 +139,10 @@ export const AdminAreasHosts = () => {
   };
 
   const handleDeleteModulo = async (moduloId: string) => {
-    if (!id_entidad || !id_sede || !selectedAreaId) return;
+    const confirmDelete = window.confirm(`¿Estás seguro de que deseas eliminar el sensor ${moduloId}?`);
+    if (!confirmDelete) return;
     try {
-      const response = await apiSensor.deleteModulo(moduloId);
+      const response = await apiSensor.deleteSensorModule(moduloId);
       console.log("Respuesta al eliminar módulo:", response);
       fetchSedeData();
     } catch (error) {
