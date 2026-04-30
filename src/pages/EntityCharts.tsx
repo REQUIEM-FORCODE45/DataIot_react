@@ -193,7 +193,7 @@ const SensorValueChart = ({
             <CardTitle className="text-lg leading-tight">{sensorId}</CardTitle>
           </div>
           <div className="flex items-center gap-2">
-            <span className="rounded-full border border-border/70 px-2 py-1 text-[11px] font-semibold text-muted-foreground">
+            <span className="rounded-full border border-border/70 px-2 py-1 text-xs font-semibold text-[#1e293b]">
               {getValueLabel(valueKey)}
             </span>
             <Button size="sm" variant="ghost" onClick={onDownload} className="text-[#003d3a] hover:bg-[#003d3a]/10">
@@ -205,8 +205,8 @@ const SensorValueChart = ({
           </div>
         </div>
         <p className="text-xs text-muted-foreground">{sensorLabel}</p>
-        <p className="text-[11px] text-muted-foreground">
-          {initDate} → {endDate}
+        <p className="text-xs font-medium text-[#475569]">
+          <span className="font-semibold text-[#1e293b]">{initDate}</span> → <span className="font-semibold text-[#1e293b]">{endDate}</span>
         </p>
       </CardHeader>
       <CardContent className="space-y-3 pt-0">
@@ -224,7 +224,7 @@ const SensorValueChart = ({
             {points.length === 0 ? "Sin lecturas" : "Sin suficientes lecturas"}
           </p>
         )}
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs font-medium text-[#64748b]">
           {lastPoint?.x ? `Última lectura: ${formatTimestamp(String(lastPoint.x))}` : "Sin fecha de lectura"}
         </p>
       </CardContent>
@@ -713,8 +713,8 @@ export const EntityCharts = () => {
                           className="h-4 w-4 accent-[#00554f]"
                         />
                         <div className="min-w-0">
-                          <p className="truncate font-medium text-[#0f172a]">{sensor.id}</p>
-                          <p className="text-[11px] text-[#94a3b8] truncate">{sensor.label}</p>
+                          <p className="truncate font-semibold text-[#1e293b]">{sensor.id}</p>
+                          <p className="text-[11px] text-[#64748b] truncate font-medium">{sensor.label}</p>
                         </div>
                       </label>
                     ))}
