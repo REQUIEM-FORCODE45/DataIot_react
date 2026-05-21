@@ -10,6 +10,7 @@ import { Sensors } from "@/pages/Sensors"
 import { EntitySensors } from "@/pages/EntitySensors"
 import { EntityAlerts } from "@/pages/EntityAlerts"
 import { EntityCharts } from "@/pages/EntityCharts"
+import { EntityChartsLive } from "@/pages/EntityChartsLive"
 import { RegisterMantenimiento } from "@/pages/RegisterMantenimiento"
 import { MantenimientoHistory } from "@/pages/MantenimientoHistory"
 import { SensorHojaVida } from "@/pages/SensorHojaVida"
@@ -54,6 +55,7 @@ export const HomeRouter = () => {
             <Route path="/alerts" element={<Alerts />} />
             <Route path="/alerts/:entityId" element={<EntityAlerts />} />
             <Route path="/charts" element={<EntityCharts />} />
+            <Route path="/charts/live" element={<EntityChartsLive />} />
             <Route path="/mantenimiento/:areaId/:moduloId" element={<RegisterMantenimiento />} />
             <Route path="/mantenimiento/history/:areaId/:moduloId" element={<MantenimientoHistory />} />
             <Route path="/sensor/hoja-vida/:areaId/:moduloId" element={<SensorHojaVida />} />

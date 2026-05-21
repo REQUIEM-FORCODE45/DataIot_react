@@ -9,6 +9,7 @@ import { SensorCard } from "@/components/SensorCard";
 import type { Entidad, Modulo } from "@/types/entidad";
 import type { SensorHistoryRecord } from "@/types/sensor";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useSensorSocket, type SensorRealtimePayload } from "@/hooks/useSensorSocket";
 import { ArrowLeft, Layers, Cpu, Building2, Search } from "lucide-react";
 
 type SensorAreaGroup = {
@@ -36,6 +37,7 @@ export const EntitySensors = () => {
   const [selectedAreaId, setSelectedAreaId] = useState<string>("");
   const batchRef = useRef(false);
   const { filterEntitiesByAccess } = usePermissions();
+  const moduleIdSetRef = useRef<Set<string>>(new Set());
 
   const fetchEntity = useCallback(async () => {
     if (!entityId) return;
@@ -116,6 +118,38 @@ export const EntitySensors = () => {
     );
   }, [visibleAreas]);
 
+  useEffect(() => {
+    moduleIdSetRef.current = new Set(allModuleIds);
+  }, [allModuleIds]);
+
+  const handleRealtimePayload = useCallback((payload: SensorRealtimePayload) => {
+    if (!payload?.id_sensor) return;
+    if (!moduleIdSetRef.current.has(payload.id_sensor)) return;
+    const timestamp = payload.timestamp ?? new Date().toISOString();
+    const record: SensorHistoryRecord = {
+      createdAt: timestamp,
+      createAt: timestamp,
+    };
+    if (payload.payload && typeof payload.payload === "object" && !Array.isArray(payload.payload)) {
+      Object.assign(record, payload.payload as Record<string, unknown>);
+    } else if (payload.payload !== undefined) {
+      record.payload = payload.payload as unknown;
+    }
+    setHistoryMap((prev) => {
+      const existing = prev[payload.id_sensor] ?? [];
+      const next = [record, ...existing];
+      if (next.length > 200) {
+        next.length = 200;
+      }
+      return { ...prev, [payload.id_sensor]: next };
+    });
+  }, []);
+
+  const { isConnected, socketError } = useSensorSocket({
+    sensorIds: allModuleIds,
+    onSensorUpdate: handleRealtimePayload,
+  });
+
   const fetchHistoryBatch = useCallback(
     async (moduleIds: string[]) => {
       const toFetch = moduleIds.filter(
@@ -186,6 +220,18 @@ export const EntitySensors = () => {
           <h1 className="text-xl font-semibold text-[#1e293b]">
             {loadingEntity ? "Cargando..." : entity?.name ?? "Entidad no encontrada"}
           </h1>
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <span
+              className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                isConnected
+                  ? "bg-emerald-100 text-emerald-700"
+                  : "bg-amber-100 text-amber-700"
+              }`}
+            >
+              {isConnected ? "Actualizaciones en vivo" : "Buscando conexión"}
+            </span>
+            {socketError && <span className="text-[11px] font-medium text-rose-600">{socketError}</span>}
+          </div>
         </div>
       </div>
 
