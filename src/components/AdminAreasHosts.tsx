@@ -23,6 +23,8 @@ export const AdminAreasHosts = () => {
   const [loading, setLoading] = useState(true);
   const [accessDenied, setAccessDenied] = useState(false);
   const [entidadName, setEntidadName] = useState("");
+  const [editingAreaId, setEditingAreaId] = useState<string | null>(null);
+  const [editingAreaName, setEditingAreaName] = useState("");
   const { canEditSites, canAccessEntity, allowedSedeIds, isSuperAdmin, isEntidadAdmin } = usePermissions();
 
   const [selectedTipoSensor, setSelectedTipoSensor] = useState<"MT" | "MA" | "ME">("MT");
@@ -194,6 +196,20 @@ export const AdminAreasHosts = () => {
     }
   };
 
+  const handleRenameArea = async (areaId: string) => {
+    if (!id_entidad || !id_sede || !editingAreaName.trim()) {
+      setEditingAreaId(null);
+      return;
+    }
+    try {
+      await apiEntidades.renameArea(id_entidad, id_sede, areaId, editingAreaName.trim());
+      setEditingAreaId(null);
+      fetchSedeData();
+    } catch (error) {
+      console.error("Error al renombrar el área:", error);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-40">
@@ -310,8 +326,34 @@ export const AdminAreasHosts = () => {
               sede.areas.map((area: Area) => (
                 <Card key={area._id} className="border border-[#00554f]/20 shadow-sm">
                   <CardHeader className="bg-[#f8fafc] py-3 border-b flex flex-row justify-between items-center">
-                    <CardTitle className="text-lg text-[#1e293b]">{area.name}</CardTitle>
-                    
+                    {editingAreaId === area._id ? (
+                      <input
+                        className="w-48 lg:w-64 rounded border border-[#00554f] px-2 py-0.5 text-sm outline-none font-semibold text-[#1e293b]"
+                        value={editingAreaName}
+                        onChange={(e) => setEditingAreaName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") handleRenameArea(area._id!);
+                          if (e.key === "Escape") setEditingAreaId(null);
+                        }}
+                        onBlur={() => handleRenameArea(area._id!)}
+                        autoFocus
+                      />
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <CardTitle className="text-lg text-[#1e293b]">{area.name}</CardTitle>
+                        <button
+                          onClick={() => {
+                            setEditingAreaId(area._id!);
+                            setEditingAreaName(area.name);
+                          }}
+                          className="p-1 rounded-md text-[#64748b] hover:text-[#00554f] hover:bg-[#f1f5f9] transition-colors"
+                          title="Renombrar área"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                      </div>
+                    )}
+                    {editingAreaId !== area._id && (
                     <Button variant="outline" size="sm" className="border-[#00554f] text-[#00554f] hover:bg-[#00554f] hover:text-white" onClick={async () => { 
                       setSelectedAreaId(area._id!);
                       setSelectedTipoSensor("MT");
@@ -327,6 +369,7 @@ export const AdminAreasHosts = () => {
                     }}>
                       <PlusCircle size={14} className="mr-1" /> Añadir Sensor/Módulo
                     </Button>
+                    )}
                   </CardHeader>
                   
                   <CardContent className="p-4">

@@ -90,6 +90,7 @@ export const SensorCard: FC<SensorCardProps> = memo(({ module, history, areaId }
 
   const lastRecord = history?.[0];
   const timestamp = lastRecord?.createAt ?? lastRecord?.createdAt;
+  const lastValue = selectedKey ? (lastRecord?.[selectedKey] as number | undefined) : undefined;
 
   const todayHistory = useMemo(() => {
     if (!history?.length) return [];
@@ -114,20 +115,20 @@ export const SensorCard: FC<SensorCardProps> = memo(({ module, history, areaId }
   }, [todayHistory, selectedKey]);
 
   return (
-    <Card className={cn("min-h-[240px] border border-border bg-card/90 shadow-sm transition hover:shadow-md")}>
+    <Card className={cn("min-h-[240px] overflow-hidden transition hover:shadow-md")}>
       <CardHeader className="space-y-1 pb-2">
         <div className="flex items-start justify-between gap-2">
-          <div>
+          <div className="min-w-0 flex-1">
             <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Sensor</p>
-            <CardTitle className="text-lg font-semibold text-[#1e293b] leading-tight">{module.id_modulo}</CardTitle>
+            <CardTitle className="text-lg font-semibold text-[#1e293b] leading-tight truncate">{module.id_modulo}</CardTitle>
           </div>
-          <span className="rounded-full border border-border/70 px-2 py-1 text-xs font-medium text-[#1e293b]">
+          <span className="rounded-full border border-border/70 px-2 py-1 text-xs font-medium text-[#1e293b] max-w-[120px] truncate">
             {title }
           </span>
         </div>
-        <p className="text-xs font-medium text-[#475569]">{module.ubicacion || "Sin ubicación"}</p>
+        <p className="text-xs font-medium text-[#475569] truncate">{module.ubicacion || "Sin ubicación"}</p>
         {areaId && (
-          <div className="flex gap-2 mt-2">
+          <div className="flex flex-wrap gap-2 mt-2">
             <Button 
               variant="outline" 
               size="sm" 
@@ -191,8 +192,10 @@ export const SensorCard: FC<SensorCardProps> = memo(({ module, history, areaId }
             </p>
           )
         )}
-        <p className="text-xs font-medium text-[#64748b]">
-          {timestamp ? `Última lectura: ${formatTimestamp(timestamp)}` : "Sin fecha de lectura"}
+        <p className="text-xs font-medium text-[#64748b] truncate">
+          {timestamp
+            ? `Última lectura: ${formatTimestamp(timestamp)}${lastValue !== undefined ? ` valor: ${lastValue}` : ""}`
+            : "Sin fecha de lectura"}
         </p>
       </CardContent>
     </Card>

@@ -17,6 +17,8 @@ import { SensorHojaVida } from "@/pages/SensorHojaVida"
 import { SensorAlertas } from "@/pages/SensorAlertas"
 import { Alerts } from "@/pages/Alerts"
 import { Profile } from "@/pages/Profile"
+import { DashboardLayout } from "@/Dashboard/DashboardLayout"
+import { Reports } from "@/pages/Reports"
 import { Bell } from "lucide-react"
 import { useAuthStore } from "@/hooks/useAuthStore";
 
@@ -61,6 +63,8 @@ export const HomeRouter = () => {
             <Route path="/sensor/hoja-vida/:areaId/:moduloId" element={<SensorHojaVida />} />
             <Route path="/sensor/alertas/:moduloId" element={<SensorAlertas />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/dashboard/*" element={<DashboardLayout />} />
+            <Route path="/reports" element={<Reports />} />
             <Route path="/*" element={<Navigate to="/"/>} />
 
           </Routes>

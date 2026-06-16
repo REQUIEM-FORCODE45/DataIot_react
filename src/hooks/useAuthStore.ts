@@ -2,7 +2,7 @@ import { useDispatch, useSelector } from "react-redux";
 import authApi from "../api/auth";
 import type { AppDispatch } from "../store/store";
 import type { RootState } from "../store/store";
-import { onLogin, onLogout } from "../store/auth/authSlice"; // Asegúrate de importar tus acciones
+import { onLogin, onLogout, clearErrorMessage } from "../store/auth/authSlice"; // Asegúrate de importar tus acciones
 
 // Interfaz de respuesta esperada del login
 interface LoginResponse {
@@ -61,11 +61,7 @@ export const useAuthStore = () => {
 
         } catch (error: any) {
             console.error("Error en login:", error);
-            const message =
-                error?.response?.data?.message ||
-                error?.message ||
-                "Error de autenticación";
-            dispatch(onLogout(message));
+            dispatch(onLogout("Contraseña o correo inválida"));
         }
     };
 
@@ -100,5 +96,6 @@ export const useAuthStore = () => {
         startLogin,
         checkAuthToken,
         startLogout,
+        clearErrorMessage: () => dispatch(clearErrorMessage()),
     };
 };

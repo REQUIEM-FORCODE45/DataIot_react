@@ -15,7 +15,7 @@ export const User = () => {
   const [users, setUsers] = useState<UserData[]>([]);
   const [entidades, setEntidades] = useState<Entidad[]>([]); 
   const [loading, setLoading] = useState(true);
-  const { canViewUsers, canEditUsers, filterEntitiesByAccess } = usePermissions();
+  const { canViewUsers, canEditUsers, filterEntitiesByAccess, isSuperAdmin } = usePermissions();
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -118,8 +118,13 @@ export const User = () => {
       setIsModalOpen(false);
       setFormData({ name: "", email: "", identification_type: "CC", identification: "", phone: "", address: "", rol: "user", entidad_id: "", sedes: [] });
       fetchData(); 
-    } catch (error) {
-      console.error("Error al registrar usuario:", error);
+    } catch (err: any) {
+      const status = err?.response?.status;
+      const msg = err?.response?.data?.message;
+      if (status === 403) alert(msg || "Permisos insuficientes para registrar este usuario");
+      else if (status === 401) alert("Sesión expirada");
+      else if (status === 400) alert(msg || "Datos inválidos");
+      else console.error("Error al registrar usuario:", err);
     } finally {
       setIsSubmitting(false);
     }
@@ -402,7 +407,7 @@ export const User = () => {
                           <option value="user">Usuario Regular</option>
                           <option value="sedeAdmin">Admin de Sede</option>
                           <option value="entidadAdmin">Admin de Entidad</option>
-                          <option value="superAdmin">Super Admin</option>
+                          {isSuperAdmin && <option value="superAdmin">Super Admin</option>}
                         </select>
                       </div>
                       <div className="space-y-2">
@@ -632,14 +637,23 @@ export const User = () => {
                       className="text-sm bg-background border rounded px-2 py-1 font-medium cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#00554f]"
                       value={user.rol}
                       onChange={async (e) => {
-                        await apiUsuarios.updateRol(user._id, e.target.value);
-                        fetchData();
+                        const nuevoRol = e.target.value;
+                        try {
+                          await apiUsuarios.updateRol(user._id, nuevoRol);
+                          fetchData();
+                        } catch (err: any) {
+                          const status = err?.response?.status;
+                          const msg = err?.response?.data?.message;
+                          if (status === 403) alert(msg || "Solo un superAdmin puede asignar el rol superAdmin");
+                          else if (status === 401) alert("Sesión expirada");
+                          else alert("Error al cambiar rol");
+                        }
                       }}
                     >
                       <option value="user">Usuario</option>
                       <option value="sedeAdmin">Admin Sede</option>
                       <option value="entidadAdmin">Admin Entidad</option>
-                      <option value="superAdmin">Super Admin</option>
+                      {isSuperAdmin && <option value="superAdmin">Super Admin</option>}
                     </select>
                   </div>
 

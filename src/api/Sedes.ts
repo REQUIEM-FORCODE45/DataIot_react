@@ -66,6 +66,16 @@ export const apiEntidades = {
     return response.data;
   },
 
+  renameSede: async (id_entidad: string, id_sede: string, name: string) => {
+    const response = await apiClient.put(`/update/${id_entidad}/sede/${id_sede}`, { name });
+    return response.data;
+  },
+
+  renameArea: async (id_entidad: string, id_sede: string, id_area: string, name: string) => {
+    const response = await apiClient.put(`/update/${id_entidad}/sede/${id_sede}/area/${id_area}`, { name });
+    return response.data;
+  },
+
   deleteEntidad: async (id: string) => {
     const response = await apiClient.delete(`/delete/${id}`);
     return response.data;

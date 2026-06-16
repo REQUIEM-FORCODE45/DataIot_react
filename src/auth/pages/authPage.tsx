@@ -4,26 +4,24 @@ import { useAuthStore } from "../../hooks/useAuthStore";
 export const AuthPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);  
-  const { startLogin } = useAuthStore();
+  const { startLogin, errorMessage, clearErrorMessage } = useAuthStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
     setLoading(true);
+    await startLogin(email, password);
+    setLoading(false);
+  };
 
-    try {
-      await startLogin(email, password);
-    } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Ocurrió un error inesperado.");
-      }
-    } finally {
-      setLoading(false);
-    }
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmail(e.target.value);
+    if (errorMessage) clearErrorMessage();
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPassword(e.target.value);
+    if (errorMessage) clearErrorMessage();
   };
 
   return (
@@ -73,7 +71,7 @@ export const AuthPage = () => {
           />
         </div>
 
-        {error && (
+        {errorMessage && (
           <div style={{
             color: "#721c24",
             backgroundColor: "#f8d7da",
@@ -83,7 +81,7 @@ export const AuthPage = () => {
             textAlign: "center",
             border: "1px solid #f5c6cb"
           }}>
-            {error}
+            {errorMessage}
           </div>
         )}
 
@@ -91,7 +89,7 @@ export const AuthPage = () => {
           type="email"
           placeholder="Correo Electrónico"
           value={email}
-          onChange={e => setEmail(e.target.value)}
+          onChange={handleEmailChange}
           required
           disabled={loading}
           style={{
@@ -108,7 +106,7 @@ export const AuthPage = () => {
           type="password"
           placeholder="Contraseña"
           value={password}
-          onChange={e => setPassword(e.target.value)}
+          onChange={handlePasswordChange}
           required
           disabled={loading}
           style={{

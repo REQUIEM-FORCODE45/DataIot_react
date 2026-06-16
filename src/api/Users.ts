@@ -115,6 +115,11 @@ export const apiUsuarios = {
     const response = await apiUser.delete(`/delete/${id}`);
     return response.data;
   },
+
+  vincularTelegram: async (chatId: string) => {
+    const response = await apiUser.put("/telegram", { chat_id: chatId });
+    return response.data;
+  },
 };
 
 export default apiUser;

@@ -5,7 +5,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { apiEntidades } from "@/api/Sedes";
 import type { Entidad } from "@/types/entidad";
 import { usePermissions } from "@/hooks/usePermissions";
-import { ChevronDown, ChevronRight, Layers, MapPin, Building2, Cpu } from "lucide-react";
+import { ChevronDown, ChevronRight, Layers, MapPin, Building2, Cpu, Send } from "lucide-react";
+import { apiUsuarios } from "@/api/Users";
 
 const countModules = (entity: Entidad) =>
   entity.sedes?.reduce(
@@ -21,6 +22,9 @@ export const Alerts = () => {
   const [entities, setEntities] = useState<Entidad[]>([]);
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [telegramChatId, setTelegramChatId] = useState("");
+  const [linkingTelegram, setLinkingTelegram] = useState(false);
+  const [telegramLinked, setTelegramLinked] = useState(false);
   const navigate = useNavigate();
   const { filterEntitiesByAccess } = usePermissions();
 
@@ -48,6 +52,25 @@ export const Alerts = () => {
       }
       return next;
     });
+  };
+
+  const handleVincularTelegram = async () => {
+    const trimmed = telegramChatId.trim();
+    if (!trimmed) return alert("Ingresa tu Chat ID de Telegram");
+    setLinkingTelegram(true);
+    try {
+      await apiUsuarios.vincularTelegram(trimmed);
+      setTelegramLinked(true);
+    } catch (err: any) {
+      const status = err?.response?.status;
+      const msg = err?.response?.data?.message;
+      if (status === 400) alert("Falta chat_id: " + (msg || ""));
+      else if (status === 401) alert("Token inválido o expirado");
+      else if (status === 404) alert("Usuario no encontrado");
+      else alert("Error al vincular. Verifica tu sesión y el Chat ID.");
+    } finally {
+      setLinkingTelegram(false);
+    }
   };
 
   const totalSensors = useMemo(() => entities.reduce((acc, e) => acc + countModules(e), 0), [entities]);
@@ -92,6 +115,40 @@ export const Alerts = () => {
               <span>Operativo</span>
             </div>
           </article>
+        </div>
+      </section>
+
+      <section className="rounded-[12px] border border-black/10 bg-white shadow-sm px-6 py-5 space-y-4">
+        <div className="flex items-center gap-2">
+          <Send size={18} className="text-[#00554f]" />
+          <h2 className="text-lg font-semibold text-[#1e293b]">Vincular Telegram</h2>
+          {telegramLinked && (
+            <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
+              Vinculado
+            </span>
+          )}
+        </div>
+        <p className="text-sm text-[#64748b]">
+          Inicia conversación con <b>@AlertsDataIot_bot</b> en Telegram,
+          envía el comando <b>/start</b> para obtener tu Chat ID y luego ingrésalo aquí.
+        </p>
+        <div className="flex items-center gap-3">
+          <input
+            type="text"
+            placeholder="Ej: 123456789"
+            value={telegramChatId}
+            disabled={telegramLinked}
+            onChange={(e) => setTelegramChatId(e.target.value)}
+            className="flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm flex-1 max-w-xs"
+          />
+          <Button
+            size="sm"
+            onClick={handleVincularTelegram}
+            disabled={linkingTelegram || telegramLinked}
+            className="bg-[#00554f] hover:bg-[#004a45] text-white rounded-[10px]"
+          >
+            {linkingTelegram ? "Vinculando..." : telegramLinked ? "Vinculado" : "Vincular"}
+          </Button>
         </div>
       </section>
 

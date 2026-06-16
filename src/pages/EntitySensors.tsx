@@ -205,7 +205,7 @@ export const EntitySensors = () => {
   const totalSedes = entity?.sedes?.length ?? 0;
 
   return (
-    <div className="w-full max-w-[1400px] mx-auto px-2 min-w-0 space-y-6">
+    <div className="w-full max-w-[1400px] mx-auto px-2 min-w-0 space-y-4 sm:space-y-6">
       <div className="flex items-center gap-3">
         <Button
           variant="ghost"
@@ -217,7 +217,7 @@ export const EntitySensors = () => {
         </Button>
         <div>
           <p className="text-xs uppercase tracking-[0.3em] text-[#64748b]">Sensores</p>
-          <h1 className="text-xl font-semibold text-[#1e293b]">
+          <h1 className="text-lg sm:text-xl font-semibold text-[#1e293b]">
             {loadingEntity ? "Cargando..." : entity?.name ?? "Entidad no encontrada"}
           </h1>
           <div className="mt-1 flex flex-wrap items-center gap-2">
@@ -235,8 +235,8 @@ export const EntitySensors = () => {
         </div>
       </div>
 
-      <div className="rounded-[12px] border border-black/10 bg-[#e7ecf2] px-6 py-4 shadow-sm">
-        <div className="grid gap-4 sm:grid-cols-3">
+      <div className="rounded-[12px] border border-black/10 bg-[#e7ecf2] px-4 py-3 sm:px-6 shadow-sm">
+        <div className="grid gap-3 sm:gap-4 sm:grid-cols-3">
           <article className="rounded-[12px] border border-black/10 bg-white px-4 py-3">
             <p className="text-xs uppercase tracking-[0.3em] text-[#64748b]">Sedes</p>
             <div className="flex items-center gap-2 text-2xl font-semibold text-[#00554f]">
@@ -310,7 +310,7 @@ export const EntitySensors = () => {
           {searchQuery ? "No se encontraron sensores que coincidan con la búsqueda." : "No hay sensores registrados para esta entidad."}
         </Card>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {filteredSensorsByArea.map((group, groupIndex) => (
             <section key={`${group.areaId}-${groupIndex}`} className="space-y-3">
               <div className="flex items-center justify-between">
@@ -325,7 +325,7 @@ export const EntitySensors = () => {
                 </div>
                 <p className="text-xs text-[#64748b]">{group.modules.length} sensores</p>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 {group.modules.map((entry, sensorIndex) => {
                   const moduleId = getModuleId(entry.module, group.areaId, sensorIndex);
                   return (

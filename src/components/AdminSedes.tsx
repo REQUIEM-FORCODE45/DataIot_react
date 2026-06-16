@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom"; // Asumiendo react-router-dom
-import { Building, MapPin, PlusCircle, ArrowLeft, Network } from "lucide-react";
+import { Building, MapPin, PlusCircle, ArrowLeft, Network, Pencil } from "lucide-react";
 
  // Ajusta la ruta a tu archivo sedes.ts
 import { apiEntidades } from "@/api/Sedes";
@@ -24,6 +24,8 @@ export const AdminSedes = () => {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingSedeId, setEditingSedeId] = useState<string | null>(null);
+  const [editingSedeName, setEditingSedeName] = useState("");
   const { canEditSites, canAccessEntity, allowedSedeIds, isSuperAdmin, isEntidadAdmin } = usePermissions();
 
   // Estado para el formulario de la nueva sede
@@ -79,6 +81,20 @@ export const AdminSedes = () => {
       console.error("Error al registrar la sede:", error);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleRenameSede = async (sedeId: string) => {
+    if (!id_entidad || !editingSedeName.trim()) {
+      setEditingSedeId(null);
+      return;
+    }
+    try {
+      await apiEntidades.renameSede(id_entidad, sedeId, editingSedeName.trim());
+      setEditingSedeId(null);
+      fetchSedes();
+    } catch (error) {
+      console.error("Error al renombrar la sede:", error);
     }
   };
 
@@ -177,8 +193,34 @@ export const AdminSedes = () => {
                 <Card key={sede._id} className="hover:shadow-md transition-all">
                   <CardHeader className="pb-3 border-b">
                     <CardTitle className="text-lg flex items-center gap-2 text-[#1e293b]">
-                      <MapPin size={18} className="text-[#00554f]" />
-                      {sede.name}
+                      <MapPin size={18} className="text-[#00554f] shrink-0" />
+                      {editingSedeId === sede._id ? (
+                        <input
+                          className="w-36 sm:w-44 rounded border border-[#00554f] px-2 py-0.5 text-sm outline-none"
+                          value={editingSedeName}
+                          onChange={(e) => setEditingSedeName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleRenameSede(sede._id!);
+                            if (e.key === "Escape") setEditingSedeId(null);
+                          }}
+                          onBlur={() => handleRenameSede(sede._id!)}
+                          autoFocus
+                        />
+                      ) : (
+                        <>
+                          <span className="min-w-0 flex-1 truncate">{sede.name}</span>
+                          <button
+                            onClick={() => {
+                              setEditingSedeId(sede._id!);
+                              setEditingSedeName(sede.name);
+                            }}
+                            className="shrink-0 p-1 rounded-md text-[#64748b] hover:text-[#00554f] hover:bg-[#f1f5f9] transition-colors"
+                            title="Renombrar sede"
+                          >
+                            <Pencil size={14} />
+                          </button>
+                        </>
+                      )}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="pt-4 space-y-2">

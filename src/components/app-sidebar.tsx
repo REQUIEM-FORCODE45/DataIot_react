@@ -1,4 +1,4 @@
-import { Activity, Settings, Microscope, ChevronUp, User2, LineChart, Bell, UserCircle, Radar } from "lucide-react"
+import { Activity, Settings, Microscope, ChevronUp, User2, LineChart, Bell, UserCircle, LayoutDashboard, FileText } from "lucide-react"
 import { useAuthStore } from "@/hooks/useAuthStore"
 import { usePermissions } from "@/hooks/usePermissions"
 import { Link } from "react-router-dom"
@@ -19,9 +19,11 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 const items = [
+  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Sensores", url: "/sensors", icon: Microscope },
   { title: "Alertas", url: "/alerts", icon: Bell },
   { title: "Gráficas", url: "/charts", icon: LineChart },
+  { title: "Reportes", url: "/reports", icon: FileText },
   //{ title: "Gráficas en vivo", url: "/charts/live", icon: Radar },
   { title: "Usuarios", url: "/users", icon: Activity, permission: "users" },
   { title: "Sedes", url: "/sites", icon: Settings, permission: "sites" },
