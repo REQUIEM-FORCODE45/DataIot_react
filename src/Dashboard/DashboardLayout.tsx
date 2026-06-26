@@ -24,6 +24,18 @@ const NAV_ITEMS = [
   { id: "energia", domainKey: "energy" as const, label: "Energía Trifásica", icon: Zap, color: "text-amber-600" },
 ] as const
 
+const hasPrefix = (lower: string, prefix: string): boolean =>
+  lower.startsWith(prefix) || lower.includes(`_${prefix}`)
+
+const classifyDomain = (sensorId: string): DomainKey => {
+  const lower = sensorId.toLowerCase()
+  if (hasPrefix(lower, "mt")) return "temp"
+  if (hasPrefix(lower, "amb")) return "ambiente"
+  if (hasPrefix(lower, "ma")) return "ambiente"
+  if (hasPrefix(lower, "me")) return "energy"
+  return "ambiente"
+}
+
 export const DashboardLayout = () => {
   const navigate = useNavigate()
   const location = useLocation()
@@ -51,7 +63,7 @@ export const DashboardLayout = () => {
               const sensorId = modulo.id_modulo ?? modulo._id ?? modulo.modulo ?? ""
               if (!sensorId) return
 
-              const domain = sensorId.startsWith("MT") ? "temp" : sensorId.startsWith("MA") ? "ambiente" : sensorId.startsWith("ME") ? "energy" : "ambiente"
+              const domain = classifyDomain(sensorId)
               if (seen[domain].has(sensorId)) return
               seen[domain].add(sensorId)
 

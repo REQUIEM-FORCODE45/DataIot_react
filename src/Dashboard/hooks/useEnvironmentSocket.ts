@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useState } from "react"
-import { apiCommands } from "@/api/Commands"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useSensorSocket, type SensorRealtimePayload } from "@/hooks/useSensorSocket"
 import { getColombiaTimestamp } from "./useColombiaTimestamp"
 
@@ -39,74 +38,21 @@ const calcComfort = (temp: number, hum: number): EnvironmentData["comfortLevel"]
   return "ideal"
 }
 
-const parseRecords = (records: { createAt?: string; createdAt?: string; value1?: number; value2?: number; value4?: number; temp?: number }[]): EnvPoint[] => {
-  return records
-    .map((r) => ({
-      time: r.createAt ?? r.createdAt ?? "",
-      co2: r.value1 ?? 0,
-      temp: r.value2 ?? r.temp ?? 0,
-      humidity: r.value4 ?? 0,
-    }))
-    .filter((p) => p.time && (p.co2 > 0 || p.temp > 0))
-}
-
-const recalcFromPoints = (points: EnvPoint[]): EnvironmentData => {
-  if (!points.length) return initialState
-  const latest = points[points.length - 1]
-  const co2Values = points.filter((p) => p.co2 > 0).map((p) => p.co2)
-
-  return {
-    co2: latest.co2 || initialState.co2,
-    temperature: latest.temp || initialState.temperature,
-    humidity: latest.humidity || initialState.humidity,
-    comfortLevel: calcComfort(latest.temp || initialState.temperature, latest.humidity || initialState.humidity),
-    minCo2: co2Values.length ? Math.min(...co2Values) : initialState.minCo2,
-    maxCo2: co2Values.length ? Math.max(...co2Values) : initialState.maxCo2,
-    avgCo2: co2Values.length ? Number((co2Values.reduce((a, b) => a + b, 0) / co2Values.length).toFixed(0)) : initialState.avgCo2,
-  }
-}
-
 export const useEnvironmentSocket = (sensorId: string | null) => {
   const [data, setData] = useState<EnvironmentData>(initialState)
   const [chartHistory, setChartHistory] = useState<EnvPoint[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+
+  const sensorIdRef = useRef(sensorId)
+
+  useEffect(() => {
+    sensorIdRef.current = sensorId
+  })
 
   const sensorIds = sensorId ? [sensorId] : []
 
-  useEffect(() => {
-    setChartHistory([])
-
-    if (!sensorId) {
-      setLoading(false)
-      return
-    }
-
-    let cancelled = false
-
-    const fetchInitial = async () => {
-      setLoading(true)
-      setError(null)
-      try {
-        const res = await apiCommands.getSensorHistory(sensorId, 28)
-        const records = res.data.data ?? []
-        const points = parseRecords(records)
-        if (!cancelled) {
-          setData(recalcFromPoints(points))
-        }
-      } catch {
-        if (!cancelled) setError("Error al cargar histórico de ambiente")
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    }
-
-    fetchInitial()
-    return () => { cancelled = true }
-  }, [sensorId])
-
   const handleUpdate = useCallback((payload: SensorRealtimePayload) => {
     if (payload.type_sensor !== "ambiente") return
+    if (payload.id_sensor !== sensorIdRef.current) return
     const p = payload.payload as Record<string, unknown> | undefined
     if (!p) return
 
@@ -137,9 +83,11 @@ export const useEnvironmentSocket = (sensorId: string | null) => {
         avgCo2: Math.round((prev.avgCo2 * 0.9 + co2 * 0.1)),
       }))
     }
+
     if (temp !== null) {
       setData((prev) => ({ ...prev, temperature: temp }))
     }
+
     if (humidity !== null) {
       setData((prev) => ({
         ...prev,
@@ -147,12 +95,14 @@ export const useEnvironmentSocket = (sensorId: string | null) => {
         comfortLevel: calcComfort(temp ?? prev.temperature, humidity),
       }))
     }
+
     if (temp !== null && humidity !== null) {
       setData((prev) => ({ ...prev, comfortLevel: calcComfort(temp, humidity) }))
     }
+    
   }, [data])
 
   const { isConnected } = useSensorSocket({ sensorIds, onSensorUpdate: handleUpdate })
 
-  return { ...data, chartHistory, loading, error, isConnected }
+  return { ...data, chartHistory, isConnected }
 }

@@ -14,27 +14,8 @@ interface EnvironmentDashboardProps {
 }
 
 export const EnvironmentDashboard = ({ sensorId, sensorOptions, onSelectSensor }: EnvironmentDashboardProps) => {
-  const { co2, temperature, humidity, comfortLevel, minCo2, maxCo2, avgCo2, chartHistory, loading, isConnected } =
+  const { co2, temperature, humidity, comfortLevel, minCo2, maxCo2, avgCo2, chartHistory, isConnected } =
     useEnvironmentSocket(sensorId)
-
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <SectionHeader title="Ambiente" subtitle="Calidad del Aire" icon={<Leaf size={22} />} />
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="rounded-[12px] border border-black/10 bg-white p-4 animate-pulse h-32" />
-          ))}
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[1, 2].map((i) => (
-            <div key={i} className="rounded-[12px] border border-black/10 bg-white p-4 animate-pulse h-32" />
-          ))}
-        </div>
-        <div className="rounded-[12px] border border-black/10 bg-white p-4 animate-pulse h-[300px]" />
-      </div>
-    )
-  }
 
   if (!sensorId) {
     return (

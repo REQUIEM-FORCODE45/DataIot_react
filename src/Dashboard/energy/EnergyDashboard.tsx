@@ -25,22 +25,8 @@ type TabId = (typeof TABS)[number]["id"]
 
 export const EnergyDashboard = ({ sensorId, sensorOptions, onSelectSensor }: EnergyDashboardProps) => {
   const [activeTab, setActiveTab] = useState<TabId>("powers")
-  const { st, pt, qt, fpt, fpa, fpb, fpc, ia, ib, ic, va, vb, vc, frequency, frequencyHistory, loading, isConnected } =
+  const { st, pt, qt, fpt, fpa, fpb, fpc, ia, ib, ic, va, vb, vc, frequency, frequencyHistory, isConnected } =
     useEnergySocket(sensorId)
-
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <SectionHeader title="Energía" subtitle="Analizador Trifásico" icon={<Zap size={22} />} />
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="rounded-[12px] border border-black/10 bg-white p-4 animate-pulse h-32" />
-          ))}
-        </div>
-        <div className="rounded-[12px] border border-black/10 bg-white p-4 animate-pulse h-64" />
-      </div>
-    )
-  }
 
   if (!sensorId) {
     return (

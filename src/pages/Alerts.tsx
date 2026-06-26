@@ -25,6 +25,7 @@ export const Alerts = () => {
   const [telegramChatId, setTelegramChatId] = useState("");
   const [linkingTelegram, setLinkingTelegram] = useState(false);
   const [telegramLinked, setTelegramLinked] = useState(false);
+  const [linkedChatId, setLinkedChatId] = useState("");
   const navigate = useNavigate();
   const { filterEntitiesByAccess } = usePermissions();
 
@@ -41,6 +42,21 @@ export const Alerts = () => {
   useEffect(() => {
     fetchEntities();
   }, [fetchEntities]);
+
+  useEffect(() => {
+    const fetchTelegramStatus = async () => {
+      try {
+        const data = await apiUsuarios.getTelegramId();
+        if (data?.telegramChatId) {
+          setLinkedChatId(data.telegramChatId);
+          setTelegramLinked(true);
+        }
+      } catch {
+        // Silently fail
+      }
+    };
+    fetchTelegramStatus();
+  }, []);
 
   const toggle = (id: string) => {
     setExpanded((prev) => {
@@ -60,6 +76,8 @@ export const Alerts = () => {
     setLinkingTelegram(true);
     try {
       await apiUsuarios.vincularTelegram(trimmed);
+      setLinkedChatId(trimmed);
+      setTelegramChatId(trimmed);
       setTelegramLinked(true);
     } catch (err: any) {
       const status = err?.response?.status;
@@ -124,7 +142,7 @@ export const Alerts = () => {
           <h2 className="text-lg font-semibold text-[#1e293b]">Vincular Telegram</h2>
           {telegramLinked && (
             <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
-              Vinculado
+              Vinculado{linkedChatId ? `: ${linkedChatId}` : ""}
             </span>
           )}
         </div>
@@ -137,17 +155,16 @@ export const Alerts = () => {
             type="text"
             placeholder="Ej: 123456789"
             value={telegramChatId}
-            disabled={telegramLinked}
             onChange={(e) => setTelegramChatId(e.target.value)}
             className="flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm flex-1 max-w-xs"
           />
           <Button
             size="sm"
             onClick={handleVincularTelegram}
-            disabled={linkingTelegram || telegramLinked}
+            disabled={linkingTelegram}
             className="bg-[#00554f] hover:bg-[#004a45] text-white rounded-[10px]"
           >
-            {linkingTelegram ? "Vinculando..." : telegramLinked ? "Vinculado" : "Vincular"}
+            {linkingTelegram ? "Vinculando..." : telegramLinked ? "Actualizar" : "Vincular"}
           </Button>
         </div>
       </section>
@@ -179,34 +196,36 @@ export const Alerts = () => {
               return (
                 <div key={entity._id}>
                   <button
-                    className="w-full flex items-center gap-4 px-6 py-4 text-left hover:bg-[#f1f5f9] transition-colors"
+                    className="w-full flex items-start sm:items-center gap-4 px-6 py-4 text-left hover:bg-[#f1f5f9] transition-colors"
                     onClick={() => toggle(entity._id)}
                   >
-                    <span className="text-[#00554f] shrink-0">
+                    <span className="text-[#00554f] shrink-0 mt-0.5 sm:mt-0">
                       {open ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
                     </span>
-                    <div 
-                      className="flex-1 min-w-0 cursor-pointer"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/alerts/${entity._id}`);
-                      }}
-                    >
-                      <p className="font-semibold text-[#1e293b] truncate">{entity.name}</p>
-                      <p className="text-xs text-[#94a3b8]">
-                        NIT {entity.nit}-{entity.verif}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-5 text-xs text-[#64748b] shrink-0">
-                      <span className="flex items-center gap-1">
-                        <Building2 size={14} /> {sedes} {sedes === 1 ? "sede" : "sedes"}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <MapPin size={14} /> {areas} {areas === 1 ? "área" : "áreas"}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Cpu size={14} /> {modules} {modules === 1 ? "sensor" : "sensores"}
-                      </span>
+                    <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+                      <div 
+                        className="flex-1 min-w-0 cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/alerts/${entity._id}`);
+                        }}
+                      >
+                        <p className="font-semibold text-[#1e293b] truncate">{entity.name}</p>
+                        <p className="text-xs text-[#94a3b8]">
+                          NIT {entity.nit}-{entity.verif}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3 sm:gap-5 text-xs text-[#64748b] shrink-0">
+                        <span className="flex items-center gap-1">
+                          <Building2 size={14} /> {sedes} {sedes === 1 ? "sede" : "sedes"}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <MapPin size={14} /> {areas} {areas === 1 ? "área" : "áreas"}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Cpu size={14} /> {modules} {modules === 1 ? "sensor" : "sensores"}
+                        </span>
+                      </div>
                     </div>
                   </button>
 

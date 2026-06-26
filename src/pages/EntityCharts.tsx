@@ -93,8 +93,8 @@ const toApiDate = (localValue: string) => {
 
 const formatTimestamp = (value?: string) => {
   if (!value) return "Sin registro";
-  const parts = value.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/);
-  return parts ? value.replace("T", " ") : value;
+  const match = value.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/);
+  return match ? match[0].replace("T", " ") : value;
 };
 
 const PLOTLY_LAYOUT = {

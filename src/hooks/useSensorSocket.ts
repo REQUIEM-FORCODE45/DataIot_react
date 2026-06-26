@@ -25,7 +25,6 @@ export const useSensorSocket = ({ sensorIds, onSensorUpdate }: UseSensorSocketPr
   const [socketError, setSocketError] = useState<string | null>(null);
   const socketRef = useRef<Socket | null>(null);
   const joinedSensorIdsRef = useRef<string[]>([]);
-  const joinedGlobalRef = useRef(false);
   const onSensorUpdateRef = useRef<typeof onSensorUpdate>(onSensorUpdate);
 
   useEffect(() => {
@@ -64,19 +63,13 @@ export const useSensorSocket = ({ sensorIds, onSensorUpdate }: UseSensorSocketPr
     const cleanupRooms = () => {
       joinedSensorIdsRef.current.forEach((id) => socket.emit("leaveSensor", id));
       joinedSensorIdsRef.current = [];
-      if (joinedGlobalRef.current) {
-        socket.emit("leaveSensorsAll");
-        joinedGlobalRef.current = false;
-      }
     };
 
     const joinRooms = () => {
       cleanupRooms();
       if (!sensorIds.length) return;
       sensorIds.forEach((id) => socket.emit("joinSensor", id));
-      socket.emit("joinSensorsAll");
       joinedSensorIdsRef.current = [...sensorIds];
-      joinedGlobalRef.current = true;
     };
 
     if (socket.connected) {
@@ -96,6 +89,7 @@ export const useSensorSocket = ({ sensorIds, onSensorUpdate }: UseSensorSocketPr
     if (!socket) return;
 
     const handleUpdate = (payload: SensorRealtimePayload) => {
+      console.log("[WS-RAW]", JSON.parse(JSON.stringify(payload)));
       onSensorUpdateRef.current?.(payload);
     };
 

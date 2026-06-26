@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useState } from "react"
-import { apiCommands } from "@/api/Commands"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useSensorSocket, type SensorRealtimePayload } from "@/hooks/useSensorSocket"
 import { getColombiaTimestamp } from "./useColombiaTimestamp"
 
@@ -37,68 +36,37 @@ const parseNumeric = (val: unknown, fallback: number): number =>
   typeof val === "number" ? val : typeof val === "string" ? Number(val) : fallback
 
 const parseEnergyPayload = (p: Record<string, unknown>): Partial<EnergyData> => ({
-  st: parseNumeric(p.st, 0),
-  pt: parseNumeric(p.pt, 0),
-  qt: parseNumeric(p.qt, 0),
-  fpt: parseNumeric(p.fpt, 1),
-  fpa: parseNumeric(p.fpa, 1),
-  fpb: parseNumeric(p.fpb, 1),
-  fpc: parseNumeric(p.fpc, 1),
-  ia: parseNumeric(p.ia, 0),
-  ib: parseNumeric(p.ib, 0),
-  ic: parseNumeric(p.ic, 0),
-  va: parseNumeric(p.va, 0),
-  vb: parseNumeric(p.vb, 0),
-  vc: parseNumeric(p.vc, 0),
-  frequency: parseNumeric(p.fre, 60),
+  st: parseNumeric(p.ST, 0),
+  pt: parseNumeric(p.PT, 0),
+  qt: parseNumeric(p.QT, 0),
+  fpt: parseNumeric(p.FPT, 1),
+  fpa: parseNumeric(p.FPA, 1),
+  fpb: parseNumeric(p.FPB, 1),
+  fpc: parseNumeric(p.FPC, 1),
+  ia: parseNumeric(p.IA, 0),
+  ib: parseNumeric(p.IB, 0),
+  ic: parseNumeric(p.IC, 0),
+  va: parseNumeric(p.VA, 0),
+  vb: parseNumeric(p.VB, 0),
+  vc: parseNumeric(p.VC, 0),
+  frequency: parseNumeric(p.Fre, 60),
 })
 
 export const useEnergySocket = (sensorId: string | null) => {
   const [data, setData] = useState<EnergyData>(initialState)
   const [frequencyHistory, setFrequencyHistory] = useState<EnergyPoint[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+
+  const sensorIdRef = useRef(sensorId)
+
+  useEffect(() => {
+    sensorIdRef.current = sensorId
+  })
 
   const sensorIds = sensorId ? [sensorId] : []
 
-  useEffect(() => {
-    setFrequencyHistory([])
-
-    if (!sensorId) {
-      setLoading(false)
-      return
-    }
-
-    let cancelled = false
-
-    const fetchInitial = async () => {
-      setLoading(true)
-      setError(null)
-      try {
-        const res = await apiCommands.getSensorHistory(sensorId, 28)
-        if (!cancelled) {
-          const records = res.data.data ?? []
-          if (records.length > 0) {
-            const last = records[records.length - 1]
-            const st = parseNumeric(last.st ?? last.value1, 0)
-            const pt = parseNumeric(last.pt ?? last.value2, 0)
-            const qt = parseNumeric(last.qt ?? last.value3, 0)
-            setData((prev) => ({ ...prev, st, pt, qt }))
-          }
-        }
-      } catch {
-        if (!cancelled) setError("Error al cargar histórico de energía")
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    }
-
-    fetchInitial()
-    return () => { cancelled = true }
-  }, [sensorId])
-
   const handleUpdate = useCallback((payload: SensorRealtimePayload) => {
     if (payload.type_sensor !== "energy") return
+    if (payload.id_sensor !== sensorIdRef.current) return
     const p = payload.payload as Record<string, unknown> | undefined
     if (!p) return
 
@@ -117,5 +85,5 @@ export const useEnergySocket = (sensorId: string | null) => {
 
   const { isConnected } = useSensorSocket({ sensorIds, onSensorUpdate: handleUpdate })
 
-  return { ...data, frequencyHistory, loading, error, isConnected }
+  return { ...data, frequencyHistory, isConnected }
 }

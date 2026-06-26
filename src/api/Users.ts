@@ -120,6 +120,11 @@ export const apiUsuarios = {
     const response = await apiUser.put("/telegram", { chat_id: chatId });
     return response.data;
   },
+
+  getTelegramId: async (): Promise<{ telegramChatId: string | null }> => {
+    const response = await apiUser.get("/telegram");
+    return response.data;
+  },
 };
 
 export default apiUser;

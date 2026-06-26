@@ -1,24 +1,28 @@
+import { useMemo } from "react"
 import { GaugeMeter } from "../components/GaugeMeter"
 
 interface TempGaugeProps {
   value: number
+  min?: number
+  max?: number
 }
 
-const THRESHOLDS = [
-  { min: 0, max: 2, color: "#3b82f6" },
-  { min: 2, max: 4, color: "#22c55e" },
-  { min: 4, max: 6, color: "#eab308" },
-  { min: 6, max: 10, color: "#ef4444" },
+const getThresholds = (max: number) => [
+  { min: 0, max: +(max * 0.2).toFixed(1), color: "#3b82f6" },
+  { min: +(max * 0.2).toFixed(1), max: +(max * 0.4).toFixed(1), color: "#22c55e" },
+  { min: +(max * 0.4).toFixed(1), max: +(max * 0.6).toFixed(1), color: "#eab308" },
+  { min: +(max * 0.6).toFixed(1), max: max, color: "#ef4444" },
 ]
 
-export const TempGauge = ({ value }: TempGaugeProps) => {
+export const TempGauge = ({ value, min = 0, max = 100 }: TempGaugeProps) => {
+  const thresholds = useMemo(() => getThresholds(max), [max])
   return (
     <div className="rounded-[12px] border border-black/10 bg-white p-4 flex items-center justify-center">
       <GaugeMeter
         value={value}
-        min={0}
-        max={10}
-        thresholds={THRESHOLDS}
+        min={min}
+        max={max}
+        thresholds={thresholds}
         label="Temperatura Tanque"
         unit="°C"
         size={200}

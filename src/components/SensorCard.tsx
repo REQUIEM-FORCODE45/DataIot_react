@@ -194,7 +194,7 @@ export const SensorCard: FC<SensorCardProps> = memo(({ module, history, areaId }
         )}
         <p className="text-xs font-medium text-[#64748b] truncate">
           {timestamp
-            ? `Última lectura: ${formatTimestamp(timestamp)}${lastValue !== undefined ? ` valor: ${lastValue}` : ""}`
+            ? `Última lectura: ${formatTimestamp(timestamp)}${lastValue !== undefined ? ` - Valor: ${lastValue}` : ""}`
             : "Sin fecha de lectura"}
         </p>
       </CardContent>

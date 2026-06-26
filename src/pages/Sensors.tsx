@@ -124,34 +124,36 @@ export const Sensors = () => {
               return (
                 <div key={entity._id}>
                   <button
-                    className="w-full flex items-center gap-4 px-6 py-4 text-left hover:bg-[#f1f5f9] transition-colors"
+                    className="w-full flex items-start sm:items-center gap-4 px-6 py-4 text-left hover:bg-[#f1f5f9] transition-colors"
                     onClick={() => toggle(entity._id)}
                   >
-                    <span className="text-[#00554f] shrink-0">
+                    <span className="text-[#00554f] shrink-0 mt-0.5 sm:mt-0">
                       {open ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
                     </span>
-                    <div 
-                      className="flex-1 min-w-0 cursor-pointer"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/sensors/${entity._id}`);
-                      }}
-                    >
-                      <p className="font-semibold text-[#1e293b] truncate">{entity.name}</p>
-                      <p className="text-xs text-[#94a3b8]">
-                        NIT {entity.nit}-{entity.verif}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-5 text-xs text-[#64748b] shrink-0">
-                      <span className="flex items-center gap-1">
-                        <Building2 size={14} /> {sedes} {sedes === 1 ? "sede" : "sedes"}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <MapPin size={14} /> {areas} {areas === 1 ? "área" : "áreas"}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Cpu size={14} /> {modules} {modules === 1 ? "sensor" : "sensores"}
-                      </span>
+                    <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+                      <div 
+                        className="flex-1 min-w-0 cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/sensors/${entity._id}`);
+                        }}
+                      >
+                        <p className="font-semibold text-[#1e293b] truncate">{entity.name}</p>
+                        <p className="text-xs text-[#94a3b8]">
+                          NIT {entity.nit}-{entity.verif}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3 sm:gap-5 text-xs text-[#64748b] shrink-0">
+                        <span className="flex items-center gap-1">
+                          <Building2 size={14} /> {sedes} {sedes === 1 ? "sede" : "sedes"}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <MapPin size={14} /> {areas} {areas === 1 ? "área" : "áreas"}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Cpu size={14} /> {modules} {modules === 1 ? "sensor" : "sensores"}
+                        </span>
+                      </div>
                     </div>
                   </button>
 
