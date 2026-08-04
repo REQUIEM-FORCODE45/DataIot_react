@@ -1,4 +1,4 @@
-import { Activity, Settings, Microscope, ChevronUp, User2, LineChart, Bell, UserCircle, LayoutDashboard, FileText } from "lucide-react"
+import { Activity, Settings, Microscope, ChevronUp, User2, LineChart, Bell, UserCircle, LayoutDashboard, FileText, Truck, KeyRound } from "lucide-react"
 import { useAuthStore } from "@/hooks/useAuthStore"
 import { usePermissions } from "@/hooks/usePermissions"
 import { Link } from "react-router-dom"
@@ -23,7 +23,9 @@ const items = [
   { title: "Sensores", url: "/sensors", icon: Microscope },
   { title: "Alertas", url: "/alerts", icon: Bell },
   { title: "Gráficas", url: "/charts", icon: LineChart },
+  { title: "Rastreo", url: "/fleet", icon: Truck },
   { title: "Reportes", url: "/reports", icon: FileText },
+  { title: "API Keys", url: "/api-keys", icon: KeyRound },
   //{ title: "Gráficas en vivo", url: "/charts/live", icon: Radar },
   { title: "Usuarios", url: "/users", icon: Activity, permission: "users" },
   { title: "Sedes", url: "/sites", icon: Settings, permission: "sites" },

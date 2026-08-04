@@ -17,8 +17,11 @@ import { SensorHojaVida } from "@/pages/SensorHojaVida"
 import { SensorAlertas } from "@/pages/SensorAlertas"
 import { Alerts } from "@/pages/Alerts"
 import { Profile } from "@/pages/Profile"
-import { DashboardLayout } from "@/Dashboard/DashboardLayout"
+import { DashboardSetup } from "@/Dashboard/DashboardSetup"
+import { DashboardView } from "@/Dashboard/DashboardView"
 import { Reports } from "@/pages/Reports"
+import { ApiKeys } from "@/pages/ApiKeys"
+import { FleetTrackingPage } from "@/fleet/FleetTrackingPage"
 import { Bell } from "lucide-react"
 import { useAuthStore } from "@/hooks/useAuthStore";
 
@@ -63,8 +66,11 @@ export const HomeRouter = () => {
             <Route path="/sensor/hoja-vida/:areaId/:moduloId" element={<SensorHojaVida />} />
             <Route path="/sensor/alertas/:moduloId" element={<SensorAlertas />} />
             <Route path="/profile" element={<Profile />} />
-            <Route path="/dashboard/*" element={<DashboardLayout />} />
+            <Route path="/dashboard" element={<DashboardSetup />} />
+            <Route path="/dashboard/view" element={<DashboardView />} />
             <Route path="/reports" element={<Reports />} />
+            <Route path="/api-keys" element={<ApiKeys />} />
+            <Route path="/fleet" element={<FleetTrackingPage />} />
             <Route path="/*" element={<Navigate to="/"/>} />
 
           </Routes>

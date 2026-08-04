@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { io, type Socket } from "socket.io-client";
+import { useSharedSocket } from "@/Dashboard/contexts/SensorSocketContext";
 
 export type SensorRealtimePayload = {
   id_sensor: string;
@@ -21,17 +22,30 @@ const createSocket = (): Socket => {
 };
 
 export const useSensorSocket = ({ sensorIds, onSensorUpdate }: UseSensorSocketProps) => {
-  const [isConnected, setIsConnected] = useState(false);
-  const [socketError, setSocketError] = useState<string | null>(null);
-  const socketRef = useRef<Socket | null>(null);
-  const joinedSensorIdsRef = useRef<string[]>([]);
-  const onSensorUpdateRef = useRef<typeof onSensorUpdate>(onSensorUpdate);
+  const sharedCtx = useSharedSocket();
+  const onSensorUpdateRef = useRef(onSensorUpdate);
 
   useEffect(() => {
     onSensorUpdateRef.current = onSensorUpdate;
   }, [onSensorUpdate]);
 
+  // ---- Shared socket mode ----
   useEffect(() => {
+    if (!sharedCtx) return;
+    const unsub = sharedCtx.subscribe((payload) => {
+      onSensorUpdateRef.current?.(payload);
+    });
+    return unsub;
+  }, [sharedCtx]);
+
+  // ---- Own socket mode ----
+  const [isConnected, setIsConnected] = useState(false);
+  const [socketError, setSocketError] = useState<string | null>(null);
+  const socketRef = useRef<Socket | null>(null);
+  const joinedSensorIdsRef = useRef<string[]>([]);
+
+  useEffect(() => {
+    if (sharedCtx) return;
     const socket = createSocket();
     socketRef.current = socket;
 
@@ -54,9 +68,10 @@ export const useSensorSocket = ({ sensorIds, onSensorUpdate }: UseSensorSocketPr
       socket.off("connect_error", handleError);
       socket.close();
     };
-  }, []);
+  }, [sharedCtx]);
 
   useEffect(() => {
+    if (sharedCtx) return;
     const socket = socketRef.current;
     if (!socket) return;
 
@@ -82,9 +97,10 @@ export const useSensorSocket = ({ sensorIds, onSensorUpdate }: UseSensorSocketPr
       socket.off("connect", joinRooms);
       cleanupRooms();
     };
-  }, [sensorIds]);
+  }, [sensorIds, sharedCtx]);
 
   useEffect(() => {
+    if (sharedCtx) return;
     const socket = socketRef.current;
     if (!socket) return;
 
@@ -97,7 +113,11 @@ export const useSensorSocket = ({ sensorIds, onSensorUpdate }: UseSensorSocketPr
     return () => {
       socket.off("sensor:update", handleUpdate);
     };
-  }, []);
+  }, [sharedCtx]);
+
+  if (sharedCtx) {
+    return { isConnected: sharedCtx.isConnected, socketError: null };
+  }
 
   return {
     isConnected,

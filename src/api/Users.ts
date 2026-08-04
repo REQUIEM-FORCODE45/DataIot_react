@@ -32,6 +32,29 @@ export interface UserData {
   sedes: UserSede[];
 }
 
+export interface ApiKey {
+  _id: string;
+  name: string;
+  prefix: string;
+  expires_at: string;
+  last_used_at?: string | null;
+  is_active: boolean;
+  createdAt: string;
+}
+
+export interface CreateApiKeyResponse {
+  ok: boolean;
+  apikey?: ApiKey;
+  key?: string;
+  message: string;
+}
+
+export interface ApiKeysListResponse {
+  ok: boolean;
+  count: number;
+  apikeys: ApiKey[];
+}
+
 // 1. Creamos la instancia de Axios
 const userBaseUrl = import.meta.env.VITE_USER_BASE_URL;
 
@@ -123,6 +146,21 @@ export const apiUsuarios = {
 
   getTelegramId: async (): Promise<{ telegramChatId: string | null }> => {
     const response = await apiUser.get("/telegram");
+    return response.data;
+  },
+
+  createApiKey: async (name: string, expires_at: string): Promise<CreateApiKeyResponse> => {
+    const response = await apiUser.post("/apikey", { name, expires_at });
+    return response.data;
+  },
+
+  getMyApiKeys: async (): Promise<ApiKeysListResponse> => {
+    const response = await apiUser.get("/apikeys");
+    return response.data;
+  },
+
+  revokeApiKey: async (id: string): Promise<{ ok: boolean; message: string }> => {
+    const response = await apiUser.delete(`/apikey/${id}`);
     return response.data;
   },
 };

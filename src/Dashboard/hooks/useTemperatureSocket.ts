@@ -71,7 +71,7 @@ export const useTemperatureSocket = (sensorId: string | null) => {
     if (payload.id_sensor !== sensorIdRef.current) return
     const p = payload.payload as Record<string, unknown> | undefined
     if (!p) return
-    const temp = typeof p.Temperatura === "number" ? p.Temperatura : typeof p.temp === "number" ? p.temp : typeof p.value2 === "number" ? p.value2 : typeof p.value1 === "number" ? p.value1 : null
+    const temp = typeof p.Temp === "number" ? p.Temp : typeof p.temperatura === "number" ? p.temperatura : typeof p.temp === "number" ? p.temp : typeof p.value2 === "number" ? p.value2 : typeof p.value1 === "number" ? p.value1 : null
     if (temp === null) return
 
     const timestamp = getColombiaTimestamp()

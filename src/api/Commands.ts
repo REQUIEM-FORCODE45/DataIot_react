@@ -61,6 +61,32 @@ export interface AlertHistoryResponse {
   data: AlertHistoryItem[];
 }
 
+export interface TrackingDataPayload {
+  id_sensor: string;
+  lat: number;
+  lng: number;
+  speed?: number;
+  altitude?: number;
+}
+
+export interface TrackingPoint {
+  _id: string;
+  lat: number;
+  lng: number;
+  speed?: number;
+  altitude?: number;
+  createAt: string;
+}
+
+export interface TrackingLastResponse {
+  data: TrackingPoint[];
+  config: unknown[];
+}
+
+export interface TrackingHistoryResponse {
+  data: TrackingPoint[];
+}
+
 export const apiCommands = {
   getLastModules: () => commandApi.get<CommandModulesResponse>("/modules/last-data"),
   getLastModulesFast: () => commandApi.get<CommandModulesResponse>("/modules/last-data-fast"),
@@ -90,4 +116,19 @@ export const apiCommands = {
   getAllAlerts: (limit = 10) => {
     return commandApi.get<AlertHistoryResponse>(`/alerts?limit=${limit}`);
   },
+
+  addDataTracking: (data: TrackingDataPayload) =>
+    commandApi.post<{ response: string }>("/addDataTracking", data),
+
+  getLastTracking: (id_sensor: string) =>
+    commandApi.get<TrackingLastResponse>(`/get/${id_sensor}/last`),
+
+  getTrackingData: (id_sensor: string, cantidad: number) =>
+    commandApi.get<TrackingHistoryResponse>(`/get/${id_sensor}/${cantidad}/data`),
+
+  getTrackingTimeRange: (id_sensor: string, inicio: string, fin: string) =>
+    commandApi.get<TrackingHistoryResponse>(`/getTime/${id_sensor}/${encodeURIComponent(inicio)}/${encodeURIComponent(fin)}/data`),
+
+  getTrackingHistory: (id_sensor: string, opcion: 0 | 1 | 3) =>
+    commandApi.get<TrackingHistoryResponse>(`/get/${id_sensor}/historico/${opcion}`),
 };
